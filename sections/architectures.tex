@@ -1,0 +1,643 @@
+%!TEX root = ../ProgAlg.tex
+\section{Architectures}
+
+\begin{figure}[H]
+    \includegraphics[width=\linewidth]{images/cluster}
+    \caption{Parallel machine model (cluster)}
+\end{figure}
+
+
+\subsection{Implicit vs. explicit parallelism}
+\begin{itemize}
+    \item Implicit Parallelism
+    \begin{itemize}
+        \item processors have multiple functional units and execute multiple instructions in the same cycle
+        \item the precise way these instructions are selected and executed provides impressive diversity in Architectures
+        \begin{itemize}
+            \item \textbf{pipelining}
+            \item \textbf{superscalar execution}
+            \item \textbf{very long instruction word processors}
+        \end{itemize}
+    \end{itemize}
+    \item Explicit Parallelism
+    \begin{itemize}
+        \item an explicitly parallel program must specify concurrency (\textbf{control structure}) and interaction (\textbf{communication model}) between concurrent subtasks
+    \end{itemize}
+\end{itemize}
+
+\subsection{Parallel programming models}
+\subsubsection{Overview of Programming models}
+\begin{itemize}
+    \item Programming models
+    \begin{itemize}
+        \item provide support for expressing concurrency and synchronization
+    \end{itemize}
+    \item Process based models
+    \begin{itemize}
+        \item assume that all data associated with a process is private, by default, unless otherwise specified
+    \end{itemize}
+    \item Lightweight processes and Threads
+    \begin{itemize}
+        \item assume that all memory is global (bounded by process boundaries)
+        \item memory protection between threads of the same process is not necessary
+        \item support much faster memory access than processes with explicitly allocated shared memory
+    \end{itemize}
+    \item Parallel programming language with syntax to specify parallelism
+    \begin{itemize}
+        \item Examples: Ada, SR, Occam (no longer common)
+    \end{itemize}
+    \item Directive based programming models
+    \begin{itemize}
+        \item extend the threaded model by facilitating creation and synchronization of threads
+        \item Examples: Open MP, Linda, POP-C++
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Parallel Machine Model}
+\begin{itemize}
+    \item PRAM
+    \begin{itemize}
+        \item a natural extension of the Random Access Machine (RAM) serial architecture
+        \item consists of \(p\) processors and a global memory of unbounded size that is uniformly accessible to all processors
+        \item procesors share a common clock but may execute different instructions in each cycle
+    \end{itemize}
+    \item Handling of simultaneous memory accesses
+    \begin{itemize}
+        \item Exclusive-read, exclusive-write (EREW)
+        \item Concurrecnt-read, exclusive-write (CREW)
+        \item Exclusive-read, concurrent-write (ERCW)
+        \item Concurrent-read, concurrent-write (CRCW)
+    \end{itemize}
+\end{itemize}
+
+What does concurrent write mean?
+\begin{description}
+    \item[Common: ] write only if all values are identical.
+    \item[Arbitrary: ] write the data from a randomly selected processor.
+    \item[Priority: ] follow a predetermined priority order.
+    \item[Sum: ] write the sum of all data items.    
+\end{description}
+
+\subsection{Different grains of parallelism}
+\begin{itemize}
+    \item Granularity: the ratio of computation to communication
+    \begin{itemize}
+        \item periods of computation are separated from periods of communication by synchronization events
+        \item constrained by the inherent characteristics of the used algorithms
+        \item the parallel programmer must select the right granularity to benefit from the underlying platform
+    \end{itemize}
+    \item Chunking
+    \begin{itemize}
+        \item determining the amount of data to assign to each task (chunk or grain size)
+    \end{itemize}
+    \item Which Granularity will lead to best performance?
+    \begin{itemize}
+        \item depends on the algorithm and the used hardware environment
+        \item general rule: increase grain size if the communication overhead is too large
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Trade-offs associated with chunk size}
+\begin{itemize}
+    \item Fine-grained parallelism
+    \begin{itemize}
+        \item low arithmetic intensity
+        \item may not have enough work to hide long-duration asynchronous communication
+        \item facilitates load balancing by providing a larger number of more manageable (i.e. smaller) work units
+        \item too fine granularity can produce slower parallel implementation than the serial execution (too much overhead required for communication)
+    \end{itemize}
+    \item Coarse-grained parallelism
+    \begin{itemize}
+        \item high arithmetic intensity
+        \item complete applications can serve as the grain of parallelism
+        \item more difficult to load balance efficiently
+    \end{itemize}
+\end{itemize}
+
+\subsection{Control structure of parallel platforms}
+\begin{multicols}{2}
+\begin{itemize}
+    \item SIMD: Single Instruction stream, Multiple Data stream
+    \begin{itemize}
+        \item there is a single control unit that dispatches the same instruction to various processors (that work on different data)
+        \item data parallelization
+    \end{itemize}
+    \item MIMD: Multiple Instruction stream, Multiple Data stream
+    \begin{itemize}
+        \item each processor has its own control unit
+        \item each processor can execute different instructions on different data items
+    \end{itemize}
+\end{itemize}
+
+\vfill\null
+\columnbreak
+\begin{center}
+    \includegraphics[width=0.6\linewidth]{images/simd_mimd}
+\end{center}
+\end{multicols}
+
+\subsubsection{SIMD Computers}
+\begin{itemize}
+    \item Hardware requirements
+    \begin{itemize}
+        \item SIMD computers require less HW than MIMD computers (only one control unit)
+        \item SIMD computers require less memory (only one copy of the program is stored)
+    \end{itemize}
+    \item Current implementations
+    \begin{itemize}
+        \item Graphics Processing Units (GPUs)
+        \item Digital Signal Processors (DSPs) are widely used in cameras and sound equipments
+        \item Co-processing units in Intel CPUs: SSEx, AVX-512
+    \end{itemize}
+    \item Software requirements
+    \begin{itemize}
+        \item SIMD relies on the regular structure of computations (such as those in image and video processing or in deep learning)
+        \item it is often necessary to selectively turn off operations on certain data items
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{MIMD Computers}
+\begin{itemize}
+    \item Single Program Multiple Data (SPMD)
+    \begin{itemize}
+        \item a simple variant of MIMD executes the same program on different processors
+        \item SPMD and MIMD are closely related in terms of programming flexibility and underlying architectural support
+        \item a single program consisting of several programs in a large switch block with conditions specified by the task identifiers is equivalent to the MIMD model
+    \end{itemize}
+    \item Current MIMD implementations
+    \begin{itemize}
+        \item SPARC servers, multiprocessor PCs, NASA Beowulf inspired workstation clusters
+    \end{itemize}
+    \item Key advantages of workstation clusters
+    \begin{itemize}
+        \item high performance workstations and PCs available at low cost
+        \item latest processors can easily be incorporated into the system as they become available
+        \item existing software can be used or modified
+    \end{itemize}
+\end{itemize}
+
+\subsection{Communication models of parallel platforms}
+\begin{itemize}
+    \item Shared-Address-Space Platforms (Multiprocessors)
+    \begin{itemize}
+        \item part (or all) of the memory is accessible to all processors
+        \item processors interact by modifying data objects stored in this shared-address-space
+        \item uniform or non-uniform memory access time (UMA vs. NUMA)
+    \end{itemize}
+    \item Message Passing Platforms (Multicomputers)
+    \begin{itemize}
+        \item comprise of a set of processors and their own (exclusive) memory
+        \item instances come naturally from clustered workstations (distributed systems) and non-shared-address-space multi-computers
+        \item are programmed using sending messages (variants of send and receive primitives)
+        \item libraries such as MPI (1990's) provide such primitives
+    \end{itemize}
+\end{itemize}
+
+\subsection{Interconnection networks}
+\begin{center}
+    \includegraphics[width=0.6\linewidth]{images/interconnection}
+\end{center}
+\begin{itemize}
+    \item Interconnection Networks for Parallel Computers
+    \begin{itemize}
+        \item carry data between processors and to memory
+        \item are made of switches and links (wires, fiber)
+        \item are classified as static or dynamic
+        \begin{itemize}
+            \item static (direct) networks consist of point-to-point communication links among processing nodes
+            \item dynamic (indirect) networks are built using switches and communication links
+        \end{itemize}
+    \end{itemize}
+    \item Network Topologies
+    \begin{itemize}
+        \item a variety of network topologies have been proposed and implemented
+        \item tradeoff performance for cost
+        \item two basic categories: physical and logical topologies
+        \item commercial machines often implement hybrids of multiple topologies
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Interconnection Network for HPC}
+\begin{itemize}
+    \item Infiniband
+    \begin{itemize}
+        \item a computer-networking communications standard used in HPC that features very high throughput and very low latency
+        \item it is used for data interconnect both among and within computers
+        \item it is also utilized as either a direct, or switched interconnect between servers and storage systems, as well as an interonnect between storage systems
+        \item it is designed to be scalable and uses a switched fabric network topology
+    \end{itemize}
+\begin{tabularx}{\linewidth}{|l|X|X|X|X|X|}
+    \hline
+    Year & FDR \small{2011} & EDR \small{2014} & HDR \small{2017} & NDR \small{2020} & XDR \small{2023}\\
+    \hline
+    Throughput, per 1x [Gbit/s] & 13.64 & 25 & 50 & 100 & 250\\
+    \hline
+    Speed for 4x links [Gbit/s] & 54.54 & 100 & 200 & 400 & 1000\\
+    \hline
+    Speed for 12x links [Gbit/s] & 163.64 & 300 & 600 & 1200 & 3000\\
+    \hline
+    Latency [\(\mu s\)] & 0.7 & 0.5 & 0.5 & tbd & tbd\\
+    \hline
+\end{tabularx}
+    \item PCI Express Version 4
+    \begin{itemize}
+        \item a high-speed serial computer expansion bus standard
+        \item has numerous improvements over the older standards
+        \begin{itemize}
+            \item higher maximum system bus throughput
+            \item lower I/O pin count and smaller physical footprint
+        \end{itemize}
+        \item has been drafted with final specifications expected in 2017
+        \item throughput:
+        \begin{itemize}
+            \item x1: 1.969 GByte/s
+            \item x16: 31.508 GByte/s
+        \end{itemize}
+        \item external cabling: Thunderbolt
+    \end{itemize}
+    \item NVIDIA NVLink
+    \begin{itemize}
+        \item is a high-bandwidth, energy-efficient interconnect
+        \item enables ultra-fast communication between the CPU and GPU, and between GPU
+        \item throughput:
+        \begin{itemize}
+            \item version 1 (used in NVIDIA Pascal): x1: 20 GByte/s, x4: 80 GByte/s
+            \item version 2 (used in IBM Power9 chip, NVIDIA Volta GPUs): x1: 25 GByte/s, x8: 200 GByte/s
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Data-Centric IT Environments}
+\begin{center}
+    \includegraphics[width=0.6\linewidth]{images/ITEnvironment}
+\end{center}
+
+\subsection{Network topologies}
+
+\begin{minipage}{0.7\linewidth}
+\subsubsection{Network Topologies: Bus}
+\begin{itemize}
+    \item Principle and Properties
+    \begin{itemize}
+        \item some of the simplest and earliest parallel machines used buses
+        \item all processors access a common bus for exchanging data
+        \item the distance between any two nodes is \(O(1)\) in a bus
+    \end{itemize}
+    \item Bottleneck
+    \begin{itemize}
+        \item the bandwidth of the shared bus is a major bottleneck
+        \item typical bus-based machines are limited to dozens of nodes
+    \end{itemize}
+    \item Examples
+    \begin{itemize}
+        \item WLAN zone (logical bus topology)
+        \item PCI bus (physical bus topology)
+    \end{itemize}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.3\linewidth}
+\begin{center}
+    \includegraphics[width=0.6\linewidth]{images/physicalBus}
+    \smallskip
+    \includegraphics[width=0.9\linewidth]{images/logicalBusPhysicalStar}
+\end{center}
+\end{minipage}
+
+\begin{minipage}{0.7\linewidth}
+\subsubsection{Network Topologies: Star}
+\begin{itemize}
+    \item Principle and Properties
+    \begin{itemize}
+        \item every node is connected only to a common node at the center
+        \item distance between any pair of node is \(O(1)\)
+    \end{itemize}
+    \item Bottleneck
+    \begin{itemize}
+        \item the central node
+    \end{itemize}
+    \item Example
+    \begin{itemize}
+        \item today's Ethernet based LANs with bridging hub (Bridge) or switching hub (Switch) as the center of the start topology
+    \end{itemize}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.3\linewidth}
+\begin{center}
+    \includegraphics[width=0.6\linewidth]{images/physicalStar}
+    \smallskip
+    \includegraphics[width=0.9\linewidth]{images/logicalAndPhysicalStar}
+\end{center}
+\end{minipage}
+
+
+\paragraph{Network Infrastructure: Switchung Hub}~\\
+\begin{minipage}{0.7\linewidth}
+\begin{itemize}
+    \item Principle and Properties
+    \begin{itemize}
+        \item frame forwarding depends on learned physical device-addresses (MAC) per port (Layer-2 switching)
+        \item non-blocking: several input-output connections can be used in parallel without blocking
+        \item store-and-forward
+        \begin{itemize}
+            \item the switch buffers and verifies each frame before forwarding it
+            \item a frame is received in its entirety before it is forwarded
+            \item error checking can be done before forwarding
+        \end{itemize}
+        \item cut-through
+        \begin{itemize}
+            \item the switch starts forwarding after the frame's destination address is received
+            \item when the outgoing port is busy at the time, the switch falls back to store-and-forward operation
+            \item there is no error checking with this method
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.3\linewidth}
+\begin{center}
+    \includegraphics[width=0.9\linewidth]{images/switchingHub}
+\end{center}
+\end{minipage}
+
+\paragraph{Switching Hub: Advanced Features}
+\begin{itemize}
+    \item Spanning Tree Protocol \(\rightarrow\) Shortest Path Bridging
+    \begin{itemize}
+        \item classic bridges may also interconnect using a spanning tree protocol that disables links so that the resulting local area network is a tree without loops
+        \item in contrast to routers, spanning tree bridges must have topologies with only one active path between two points
+        \item IEEE 802.1aq allows all paths to be active with multiple equal cost paths
+        \begin{itemize}
+            \item provides much larger layer 2 topologies (up to 16 million compared to the 4096 VLANs limit)
+            \item improves the use of the \textbf{mesh topologies} through increased bandwidth and redundancy between all devices by allowing traffic to load share across all paths of a mesh network
+        \end{itemize}
+    \end{itemize}
+    \item IEEE 802
+    \begin{itemize}
+        \item is a family of IEEE standards dealing with local area networks and metropolitan area networkds
+        \item services and protocols specified in IEEE 802 map to the lower two layers (Data Link and Physical) of the sevel-layer OSI networking reference model
+        \item small subset of the working groups
+        \begin{itemize}
+            \item 802.1: higher layer LAN protocols (bridging)
+            \item 802.1D: Spanning Tree Protocol (forwarding stopped while the spanning tree re-converged)
+            \item 802.1s: Multiple Spanning Tree Protocol
+            \item 802.1w: Rapid Spanning Tree Protocol
+            \item 802.1aq: Shortest Path Bridging (SPB) (incorporate all the older spanning tree protocols)
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Network Topologies: Crossbar}
+\begin{minipage}{0.5\linewidth}
+\begin{itemize}
+    \item Principle and Properties
+    \begin{itemize}
+        \item a crossbar network uses an \(p \cdot b\) grid of switches to connect \(p\) inputs to \(b\) outputs in a non-blocking manner
+    \end{itemize}
+    \item Bottleneck
+    \begin{itemize}
+        \item the cost of a crossbar of \(p\) processors grows as \(O(p^2)\) \(\rightarrow\) difficult to scale for large values of \(p\)
+    \end{itemize}
+    \item Usage
+    \begin{itemize}
+        \item in non-blocking switches
+        \item between L2- and L2-caches
+    \end{itemize}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.5\linewidth}
+    \begin{center}
+        \includegraphics[width=\linewidth]{images/crossbar}
+    \end{center}
+\end{minipage}
+
+\subsubsection{Network Topologies: Multistage Network}
+\begin{minipage}{0.7\linewidth}
+\begin{itemize}
+    \item Scalability
+    \begin{itemize}
+        \item busses have excellent cost scalability, but poor performance scalability
+        \item crossbars have excellent performance scalability but poor cost scalability
+        \item multistage interconnects strike a compromise between these extremes
+    \end{itemize}
+    \item Example: Omega Network
+    \begin{itemize}
+        \item it consists of \(log(p)\) stages, where \(p\) is the number of inputs/outputs
+        \item at each stage, input \(i\) is connected to output \(j\) if:
+        \[
+            j = 
+            \begin{cases}
+                2i, & 0 \leq i \leq p/2 - 1\\
+                2i + 1 - p, & p/2 \leq i \leq p - 1\\
+            \end{cases}
+        \]
+    \end{itemize}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.3\linewidth}
+    \begin{center}
+        \includegraphics[width=\linewidth]{images/omegaNetwork}
+    \end{center}
+\end{minipage}
+
+\paragraph{Omega Network}~\\
+\begin{minipage}{0.85\linewidth}
+\begin{itemize}
+    \item Principle and Properties
+    \begin{itemize}
+        \item the perfect shuffle patterns are connected using 2x2 switches
+        \item the switches operate in two modes: pass-through or cross-over
+    \end{itemize}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.15\linewidth}
+    \begin{center}
+        \includegraphics[width=0.7\linewidth]{images/omegaNetwork2}
+    \end{center}
+\end{minipage}
+\begin{center}
+    \includegraphics[width=0.5\linewidth]{images/omegaNetwork3}
+\end{center}
+
+\paragraph{Linear Array, Mesh, and \(k-d\) Mesh}~\\
+\begin{itemize}
+    \item Principle and Properties
+    \begin{itemize}
+        \item in a linear array, each node has two neighbors, one to its left and one to its right
+        \item if the nodes at either end are connected, we refer to it as a 1-D torus or a ring
+        \item a generalization to 2 dimensions has nodes with 4 neighbors, to the north, south, east, and west (toroidal mesh)
+        \item a further generalization to \(d\) dimensions has nodes with \(2d\) neighbors
+    \end{itemize}
+\end{itemize}
+\begin{center}
+    \includegraphics[width=0.7\linewidth]{images/mesh}
+\end{center}
+
+\subsubsection{Network Topologies: Hypercube}
+\begin{itemize}
+    \item Principle and Properties
+    \begin{itemize}
+        \item a special case of a \(d\)-dimensional mesh is a hypercube
+        \item \(d = log(p)\), where \(p\) is the total number of nodes
+        \item the distance between any two nodes is at most \(log(p)\)
+        \item each node has \(log(p)\) neighbors
+        \item the distance between two nodes is given by the number of bit positions at which the two nodes differ
+    \end{itemize}
+\end{itemize}
+\begin{center}
+    \includegraphics[width=0.5\linewidth]{images/hypercube}
+\end{center}
+
+\paragraph{NVIDIA NVLink: Hypercube Mesh Hybrid}~\\
+\begin{center}
+    \includegraphics[width=0.7\linewidth]{images/NVLink}
+\end{center}
+
+\subsubsection{Tree-Based Networks}
+\begin{minipage}{0.7\linewidth}
+\begin{itemize}
+    \item Principle and Properties
+    \begin{itemize}
+        \item one path between any pair of nodes
+        \begin{itemize}
+            \item linear arrays and star-connected networks are special cases of tree networks
+        \end{itemize}
+        \item the distance between any two nodes is no more than \(2 log(p)\)
+        \item links higher up the tree potentially carry more traffic than those at the lower levels
+        \item trees can be laid out in 2D with no wire crossings
+    \end{itemize}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.3\linewidth}
+    \begin{center}
+        \includegraphics[width=\linewidth]{images/tree}
+    \end{center}
+\end{minipage}
+\begin{itemize}
+    \item Fat-Tree
+    \begin{itemize}
+        \item links higher-up the tree have increased bandwidth
+    \end{itemize}
+\end{itemize}
+\begin{center}
+    \includegraphics[width=0.4\linewidth]{images/fatTree}
+\end{center}
+
+\subsubsection{Evaluating Interconnection Networks}
+\begin{itemize}
+    \item Diameter
+    \begin{itemize}
+        \item the distance between the farthest two nodes in the network
+    \end{itemize}
+    \item Channel Bandwidth = channel width x channel rate
+    \begin{itemize}
+        \item channel width: number of bits that can be communicated simultaneously over a link
+        \item channel rate: peak data transfer rate per link
+    \end{itemize}
+    \item Cross-Section Bandwidth = bisection width x channel bandwidth
+    \begin{itemize}
+        \item bisection width: the minimum number of wires one must cut to divide the network into two equal parts
+    \end{itemize}
+    \item Cost
+    \begin{itemize}
+        \item the number of links or switches (whichever is asymptotically higher) is a meaningful measure of the cost
+        \item the ability to layout the network
+        \item the length of wires
+        \item \(\ldots\)
+    \end{itemize}
+\end{itemize}
+
+\begin{tabularx}{\linewidth}{|lXXXX|}
+    \hline
+    Network & Diameter & Bisection width & Arc connectivity & Cost (No. of links)\\
+    \hline
+    Completely-connected & 1 & \(p^2/4\) & \(p-1\) & \(p(p-1)/2\)\\
+    Star & 2 & * & 1 & \(p-1\)\\
+    Complete binary tree & \(2\cdot log((p+1)/2)\) & 1 & 1 & \(p-1\)\\
+    Linear array & \(p-1\) & 1 & 1 & \(p-1\)\\
+    2D Mesh, no wraparound & \(2(\sqrt{p}-1)\) & \(\sqrt{p}\) & 2 & \(2(p-\sqrt{p})\)\\
+    2D wraparound Mesh & \(2\lfloor\sqrt{p}/2\rfloor\) & \(2\sqrt{p}\) & 4 & \(2p\)\\
+    Hypercube & \(log(p)\) & \(p/2\) & \(log(p)\) & \((p\cdot log(p))/2\)\\
+    Wraparound \(k\)-ary \(d\)-cube & \(d\lfloor k/2\rfloor\) & \(2k^{d-1}\) & \(2d\) & \(dp\)\\
+    \hline
+\end{tabularx}
+
+* depends on the node (switch) in the center, e.g. Crossbar or Omega Network
+\begin{center}
+    \begin{tabularx}{0.8\linewidth}{|lXXXX|}
+        \hline
+        Network & Diameter & Bisection width & Arc connectivity & Cost (No. of links)\\
+        \hline
+        Crossbar & 1 & \(p\) & 1 & \(p^2\)\\
+        Omega Network & \(log(p)\) & \(p/2\) & 2 & \(p/2\)\\
+        Dynamic Tree & \(2\cdot log(p)\) & 1 & 2 & \(p-1\)\\
+        \hline
+    \end{tabularx}
+\end{center}
+
+\subsection{Communication costs in parallel systems}
+\begin{minipage}{0.6\linewidth}
+\begin{itemize}
+    \item Overhead in parallel programs
+    \begin{itemize}
+        \item idling
+        \item contention
+        \item communication
+    \end{itemize}
+    \item Communication costs depend on
+    \begin{itemize}
+        \item communication model
+        \item the network topology
+        \item data handling and routing (e.g. packet routing, cut-through routing)
+        \item associated software protocols
+        \item \(\ldots\)
+    \end{itemize}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.4\linewidth}
+    \includegraphics[width=0.8\linewidth]{images/communicationCosts}
+\end{minipage}
+
+\subsubsection{Message Passing Costs}
+\begin{itemize}
+    \item Total time to transfer a message over a network comprises of the following:
+    \begin{itemize}
+        \item \textit{Startup time} (\(t_s\)): Time spent at sending and receiving nodes (executing the routing algorithm, programming routers, etc.)
+        \item \textit{Per-hop time} (\(t_h\)): This time is a function of number of hops and includes factors such as switch latencies, network delays, etc.
+        \item \textit{Per-word transfer time} (\(t_w\)): This time includes all overheads that are determined by the length of the message. This includes bandwidth of links, error checking and correction, etc.
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Cost Model for Communicating Messages}
+\begin{itemize}
+    \item Communication Costs
+    \begin{itemize}
+        \item the cost of communicating a message between two nodes/hops away using cut-through routing is given by
+        \[
+            t_{\text{comm}} = t_s + l \cdot t_h + m \cdot t_w
+        \]
+        \item \(t_h\) is typically smaller than \(t_s\) and \(t_w\), so the second term does not show, when \(m\) is large
+        \item furthermore, it is often not possible to control routing and placement of tasks
+    \end{itemize}
+    \item Simplified Cost Model
+    \[
+        t_{\text{comm}} = t_s + m \cdot t_w   
+    \]
+    \item Remarks
+    \begin{itemize}
+        \item it is important to note that the original expression for communication time is valid for only uncongested networks
+        \item if a link takes multiple messages, the corresponding \(t_w\) term must be scaled up by the number of messages
+        \item different communication patterns congest different networks to varying extents
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Cost Model for Shared Memory Systems}
+\begin{itemize}
+    \item Simplified Cost Model (still practical, but accurate cost modeling is more difficult)
+    \begin{itemize}
+        \item memory layout is typically determined by the system
+        \item finite cache sizes can result in cache thrashing
+        \item overheads associated with invalidate and update operations are difficult to quantify
+        \item spatial locality is difficult to model
+        \item pre-fetching can play a role in reducing the overhead associated with data access
+        \item false sharing and contention are difficult to model
+    \end{itemize}
+\end{itemize}

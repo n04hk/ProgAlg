@@ -1,0 +1,42 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%
+% Dokumentinformationen %
+%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcommand{\titleinfo}{Parallel and distributed computing}
+\newcommand{\authorinfo}{N.~Kälin} % Do not remove any names! Initial authors stay first.
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Standard projektübergreifender Header für
+% - Makros
+% - Farben
+% - Mathematische Operatoren
+%
+% DORT NUR ERGÄNZEN, NICHTS LÖSCHEN
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\include{header}
+\setitemize{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
+\usepackage{listings}
+\lstset{
+   breaklines=true,
+   language=C++,
+   escapeinside={\%*}{*)}
+}
+\usepackage{tabularx}
+\usepackage{float}
+
+% Möglichst keine Ergänzungen hier, sondern in header.tex
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{titlepage}
+   \thispagestyle{empty}
+   \maketitle
+\end{titlepage}
+\tableofcontents
+\newpage
+
+\include{sections/architectures}
+
+\end{document}
