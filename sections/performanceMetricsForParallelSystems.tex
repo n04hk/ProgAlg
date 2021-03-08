@@ -1,0 +1,277 @@
+%!TEX root = ../ProgAlg.tex
+\section{Performance Metrics for Parallel Systems}
+
+\subsection{Analytical Modeling}
+\subsubsection{Analytical Modeling: Basics}
+\begin{itemize}
+    \item Sequential Runtime
+    \begin{itemize}
+        \item A sequential algorithm is evaluated by its runtime (in general, asymptotic runtime as a function of input size).
+        \item The asymptotic runtime of a sequential program is identical on any serial platform.
+    \end{itemize}
+    \item Parallel Runtime
+    \begin{itemize}
+        \item The parallel runtime of a program depends on
+        \begin{itemize}
+            \item the input size \textbf{n}
+            \item the number of processing elements \textbf{p}
+            \item and the communication parameters of the machine.
+        \end{itemize}
+        \item An algorithm must therefore be analyzed in the context of the underlying platform.
+    \end{itemize}
+    \item Parallel System
+    \begin{itemize}
+        \item A parallel system is a combination of a parallel algorithm and an underlying parallel platform.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Intuitive Performance Measures}
+\begin{itemize}
+    \item Wall-clock time
+    \begin{itemize}
+        \item the time from the start of the first processor to the end of the last processor in a parallel ensemble
+        \item Problem: How does this scale when the number of processors is changed or the program is ported to another machine?
+    \end{itemize}
+    \item How much faster is the parallel version?
+    \begin{itemize}
+        \item Answering this question depends on the answers of other questions
+        \begin{itemize}
+            \item What's the baseline serial version with which we compare?
+            \item Can we use a suboptimal serial program to improve our parallel program?
+        \end{itemize}
+    \end{itemize}
+    \item Raw floating-point operations (Flop) count
+    \begin{itemize}
+        \item Problem: What good are Flop counts when they don't solve a problem?
+    \end{itemize}
+\end{itemize}
+
+\subsection{Sources of Overhead in Parallel Programs}
+\begin{itemize}
+    \item If I use two processors, shouldn't my program run twice as fast?
+    \item \textbf{No!}
+    \begin{itemize}
+        \item[\-]
+        \begin{itemize}
+            \item Several overheads, including wasted computation, communication, idling, and contention cause degradation in performance. 
+        \end{itemize}
+        \item interprocess interactions
+        \begin{itemize}
+            \item Processors working on any non-trivial parallel problem will need to talk to each other.
+        \end{itemize}
+        \item idling
+        \begin{itemize}
+            \item Processes may idle because of load imbalance, synchronization, or serial components.
+        \end{itemize}
+        \item excess computation
+        \begin{itemize}
+            \item This is computation effort not performed by the serial version.\\
+            This might be because the serial algorithm is difficult to parallelize, or that some computations are repeated across processors to minimize communication.
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\subsection{Performance Metrics for Parallel Systems}
+\begin{itemize}
+    \item Execution Time
+    \begin{itemize}
+        \item Serial runtime \(T_S\)
+        \begin{itemize}
+            \item the time elapsed between the beginning and the end of its execution on a sequential computer
+        \end{itemize}
+        \item Parallel runtime \(T_P\)
+        \begin{itemize}
+            \item the time that elapses from the moment the first processors starts to the moment the last processor finishes execution (wall-clock time)
+        \end{itemize}
+    \end{itemize}
+    \item Total Parallel Overhead \(T_O = p T_p - T_S\)
+    \begin{itemize}
+        \item the total time spent by all processors combined in non-useful work
+    \end{itemize}
+    \item Speedup \(S = \frac{T_S}{T_P}\)
+    \begin{itemize}
+        \item the ratio of the serial runtime of \textit{the best sequential algorithm} for solving a problem to the time taken by the parallel algorithm to solve the same problem on a parallel computer with \(p\) identical processing elements
+    \end{itemize}
+    \item Speedup per processor = Efficiency \(E = \frac{S}{p} = \frac{T_S}{p T_P}\)
+\end{itemize}
+
+\subsubsection{Speedup Example}
+\begin{itemize}
+    \item Problem: adding \(n\) numbers by using \(p = n\) processing elements
+    \begin{itemize}
+        \item each processing element owns the number
+        \item for simplicity: \(n\) is a power of two
+    \end{itemize}
+    \item Sequential Algorithm
+    \begin{itemize}
+        \item best algorithm has to read the entire input: \(T_S = \mathcal{O}(n)\)
+    \end{itemize}
+    \item Parallel Algorithm
+    \begin{itemize}
+        \item we can perform this operation in \(\mathcal{O}(log(n))\) steps by propagating partial sums up a logical binary tree of processors
+        \item the addition and the communication of a single word can be performed in constant time
+        \item \(T_P = \mathcal{O}(log(n))\)
+    \end{itemize}
+    \item Speedup and Efficiency
+    \begin{itemize}
+        \item \(S = \mathcal{O}(\frac{n}{log(n)})\)
+        \item \(E = \frac{S}{p} = \frac{S}{n} = \mathcal{O}(\frac{1}{log(n)})\)
+    \end{itemize}
+\end{itemize}
+
+\begin{figure}[H]
+    \begin{center}
+    \includegraphics[width=0.5\linewidth]{images/speedup}
+    \caption{Computing the global sum of 16 partial sums using 16 processing elements.\\ \(\sum_i^j\) denotes the sum of numbers with consecutive labels from \(i\) to \(j\).}
+    \end{center}
+\end{figure}
+
+\subsubsection{Speedup Bounds}
+\begin{itemize}
+    \item Lower bound
+    \begin{itemize}
+        \item speedup can be as low as 0 (the parallel program never terminates)
+    \end{itemize}
+    \item Upper bound
+    \begin{itemize}
+        \item in theory: ''the more processors, the more speedup''
+        \begin{itemize}
+            \item should be by \(p\)
+        \end{itemize}
+        \item in practice superlinear speedup is sometimes observed
+        \begin{itemize}
+            \item due to cache effects
+            \item due to exploratory decomposition
+        \end{itemize}
+        \item Example of superlinear speedup with exploratory decomposition
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Image Processing: Edge Detection}
+\begin{itemize}
+    \item Problem: edge detection in image processing
+    \begin{itemize}
+        \item a possible parallelization partitions the image equally into horizontal segments, each with \(\frac{n^2}{p}\) pixels
+        \item the boundary of each segment is \(2n\) pixels
+        \item boundaries must be communicated in time \(2 (t_s + t_w n)\)
+        \item convolution: 3x3 template is applied to all \(n^2/p\) pixels in time \(T = \frac{9 t_c n^2}{p}\), where \(t_c\) is the time for one multiply-add operation
+    \end{itemize}
+    \item The total time for the algorithm is therefore given by:
+    \[T_P = 9 t_c \frac{n^2}{p} + 2(t_s + t_w n)\]
+    The corresponding values of speedup and efficiency are given by:
+    \[S = \frac{9 t_c n^2}{9 t_c \frac{n^2}{p} + 2(t_s + t_w n)}\]
+    and
+    \[E = \frac{1}{1 + \frac{2p(t_s + t_w n)}{9 t_c n^2}}\]
+\end{itemize}
+
+\subsubsection{Cost of a Parallel System}
+\begin{itemize}
+    \item Cost (amount of total work)
+    \begin{itemize}
+        \item is the product of parallel runtime and the number of processing elements used
+        \item \(\text{Cost} = p \cdot T_P\)
+    \end{itemize}
+    \item Cost-Optimal system
+    \begin{itemize}
+        \item a parallel system is said to be cost-optimal if the cost of solving a problem on a parallel computer is \textbf{asymptotically identical} to serial cost
+        \item since \(E = \frac{T_S}{p \cdot T_P}\), for cost-optimal systems: \(E = \mathcal{O}(1)\)
+    \end{itemize}
+    \item Example: adding \(n\) numbers on \(p = n \) processors
+    \begin{itemize}
+        \item \(T_P = log(n)\)
+        \item \(\text{Cost} = p \cdot T_P = n log(n)\)
+        \item \(E = \frac{T_S}{\text{Cost}} = \frac{\mathcal{O}(n)}{\mathcal{O}(n log(n))} = \mathcal{O}(\frac{1}{log(n)}) \neq \mathcal{O}(1)\)
+        \item since the serial runtime of this operation is \(\mathcal{O}(n)\), the algorithm is \textbf{not cost-optimal}
+    \end{itemize}
+\end{itemize}
+
+\subsection{Impact of Non-Cost-Optimality}
+\begin{itemize}
+    \item Example: Sorting a list of \(n\) numbers
+    \item using \(p = n\) processors
+    \begin{itemize}
+        \item we assume a sorting algorithm that takes time \((log(n))^2\) (e.g. Bitonic Sort)
+        \item \(S = \frac{n log(n)}{log^2(n)} = \frac{n}{log(n)}\)
+        \item \(E = \frac{S}{p} = \frac{S}{n} = \frac{1}{log(n)}\)
+        \item \(\text{Cost} = p T_p = n log^2(n)\)
+        \item[\-] \(\rightarrow\) the algorithm is not cost-optimal but only by a factor of \(log(n)\)
+    \end{itemize}
+    \item using \(p < n \) processors
+    \begin{itemize}
+        \item \(T_p = \frac{n log^2(n)}{p}\)
+        \item \(S = \frac{n log(n)}{T_P} = \frac{p}{log(n)}\)
+        \item \(E = \frac{S}{p} = \frac{1}{log(n)}\)
+    \end{itemize}
+    \item[\-] \(\rightarrow\) speedup goes down as the problem size \(n\) is increased for a given \(p\)
+    \item[\-] \(\rightarrow\) efficiency doesn't depend on \(p\), but goes down as the problem size is increased 
+\end{itemize}
+
+\subsection{Effect of Granularity on Performance}
+\begin{minipage}{0.7\linewidth}
+\begin{itemize}
+    \item Scaling-Down a parallel system
+    \begin{itemize}
+        \item using fewer than the maximum possible number of processing elements to execute a parallel algorithm
+    \end{itemize}
+    \item Observation
+    \begin{itemize}
+        \item often, scaled-down parallel systems have an improved efficiency
+    \end{itemize}
+    \item A naive way of scaling down is
+    \begin{itemize}
+        \item to think of each processor in the original case as a virtual processor and to assign virtual processors \textit{equally} to scaled-down processors
+        \item since the number of processing elements decreases by a factor of \(n/p\), the computation at each processing element increases by a factor of \(n/p\)
+        \item the communication cost should not increase by this factor since some of the virtual processors assigned to a physical processor might talk to each other
+    \end{itemize}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.3\linewidth}
+    \includegraphics[width=\linewidth]{images/granularityPerformance}
+\end{minipage}
+
+\subsubsection{Effect of Granularity: Example}
+\begin{itemize}
+    \item Problem
+    \begin{itemize}
+        \item adding \(n\) numbers on \(p\) processing elements such that \(\mathbf{p < n}\) both \(n\) and \(p\) are powers of 2
+    \end{itemize}
+    \item Naive Approach
+    \begin{itemize}
+        \item use the parallel algorithm for \(n\) processors, except, in this case, we think of them as virtual processors
+        \item each of the \(p\) processors is now assigned \(\mathbf{n/p}\) virtual processors
+        \item the first \(log(p)\) of the \(log(n)\) steps of the original algorithm are simulated in \(\mathbf{(n/p) log(p)}\) steps on \(p\) processing elements
+        \item subsequent \((log(n)-log(p))\) steps of the original algorithm do not require any communication and are processed in \(\mathbf{(n/p)}\) steps
+        \item[\-] \(\rightarrow T_P = \mathcal{O}(\frac{n}{p} log(p)) + \mathcal{O}(\frac{n}{p}) = \mathcal{O}(\frac{n}{p} log(p)) \)
+        \item[\-] \(\rightarrow \text{Cost} = \mathcal{O}(n log(p))\), it is not cost-optimal by a factor of \(log(p)\)\\
+        \begin{minipage}{0.5\linewidth}
+            \includegraphics[width=\linewidth]{images/additionExample1}
+        \end{minipage}%
+        \begin{minipage}{0.5\linewidth}
+            \includegraphics[width=\linewidth]{images/additionExample2}
+        \end{minipage}
+        
+        \begin{minipage}{0.5\linewidth}
+            \includegraphics[width=\linewidth]{images/additionExample3}
+        \end{minipage}%
+        \begin{minipage}{0.5\linewidth}
+            \includegraphics[width=\linewidth]{images/additionExample4}
+        \end{minipage} 
+    \end{itemize}
+    \item Cost-optimal Approach
+    \begin{itemize}
+        \item each processing element locally adds its \(n/p\) numbers in time \(\mathcal{O}(n/p)\)
+        \item the \(p\) partial sums on \(p\) processing elements can be added in time \(log(p)\)
+        \item[\-] \(\rightarrow T_P = \mathcal{O}(\frac{n}{p} + log(p))\)
+        \item[\-] \(\rightarrow \text{Cost} = \mathcal{O}(n + p log(p))\)
+        \item[\-] \(S = \frac{n}{\frac{n}{p} + log(p)}\)
+        \item[\-] \(E = \frac{1}{1 + p \frac{log(p)}{n}}\)
+        \item this is cost-optimal, if \(p log(p) = \mathcal{O}(n)\) or if \(n = \mathcal{O}(p log(p))\)    
+        \begin{multicols}{2}
+            \includegraphics[width=\linewidth]{images/additionExample5}
+            \vfill\null
+            \columnbreak
+            \includegraphics[width=\linewidth]{images/additionExample6}
+        \end{multicols}
+    \end{itemize}
+\end{itemize}
+

@@ -267,14 +267,14 @@ th.join(); // this thread waits on parallel thread th
     \item Synchronized data access (read and write) is necessary if at least one of the parallel threads changes common data
     \item Synchronization Primitives
     \begin{itemize}
-        \item{\makebox[2.5cm]{atomic\_xyz\hfill} all accesses are atomic (are not interrupted)}
-        \item{\makebox[2.5cm]{atomic\_flag\hfill} atomic bool but lock-free}
-        \item{\makebox[2.5cm]{once\_flag\hfill} used in call\_once, makes sure that only one of the parallel threads executes the function}
-        \item{\makebox[2.5cm]{mutex\hfill} realizes mutual exclusion}
-        \item{\makebox[2.5cm]{recursive\_mutex\hfill} allows a thread computing a recursive function to reenter a critical section}
-        \item{\makebox[2.5cm]{lock\_guard\hfill} locks a critical section; very simple usage; the only state is locked}
-        \item{\makebox[2.5cm]{unique\_lock\hfill} needs its unique mutex object; handles both states: locked and unlocked}
-        \item{\makebox[2.5cm]{condition\_variable\hfill} blocks this thread until signaled (signals or notifications can be sent by other threads)}   
+        \item{\makebox[3.2cm]{atomic\_xyz\hfill} all accesses are atomic (are not interrupted)}
+        \item{\makebox[3.2cm]{atomic\_flag\hfill} atomic bool but lock-free}
+        \item{\makebox[3.2cm]{once\_flag\hfill} used in call\_once, makes sure that only one of the parallel threads executes the function}
+        \item{\makebox[3.2cm]{mutex\hfill} realizes mutual exclusion}
+        \item{\makebox[3.2cm]{recursive\_mutex\hfill} allows a thread computing a recursive function to reenter a critical section}
+        \item{\makebox[3.2cm]{lock\_guard\hfill} locks a critical section; very simple usage; the only state is locked}
+        \item{\makebox[3.2cm]{unique\_lock\hfill} needs its unique mutex object; handles both states: locked and unlocked}
+        \item{\makebox[3.2cm]{condition\_variable\hfill} blocks this thread until signaled (signals or notifications can be sent by other threads)}   
     \end{itemize}
 \end{itemize}
 
