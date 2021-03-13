@@ -1,0 +1,459 @@
+%!TEX root = ../ProgAlg.tex
+\section{Heterogeneous Shared Memory Systems}
+
+\subsection{Motivation: Performance Increase}
+\subsubsection{Motivation: Convolution}
+\begin{center}
+    \includegraphics[width=0.5\linewidth]{images/convolution}
+\end{center}
+
+\subsubsection{Performance Increase}
+\begin{itemize}
+    \item By Frequency
+    \begin{itemize}
+        \item shrinking of CMOS circuitry allows to clock circuits at a higher rate
+        \item increasing frequency increases the performance of serial code
+        \item increasing frequency is only practical in combination with voltage reduction, because the power consumption and heat dissipation increases nonlinear with frequency
+        \item further voltage reduction increases the error rate of transistor switching
+    \end{itemize}
+    \item By the number of cores
+    \begin{itemize}
+        \item shrinking of CMOS circuitry allows to multiply the number of cores and to build larger memories (caches)
+        \item code has to be parallel to take advantage of the additional cores
+    \end{itemize}
+    \item By heterogeneity
+    \begin{itemize}
+        \item application performance can be increased if the several workload characteristics can be handled by different processor architectures
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Workload Classes}
+\begin{itemize}
+    \item Different workload behaviors of applications
+    \begin{itemize}
+        \item control intensive (e.g. searching, sorting, parsing)
+        \item data intensive (e.g. image processing, simulation and modeling, data mining)
+        \item compute intensive (e.g. iterative methods, numerical methods, financial modeling)
+    \end{itemize}
+    \item Different workload classes execute most efficiently on a specific style of hardware architecture
+    \begin{itemize}
+        \item no single architecture is best for running all classes of workloads
+        \item control intensive applications: superscalar CPUs
+        \item data intensive applications: vector or SIMD architectures (e.g. GPUs)
+    \end{itemize}
+    \item Many applications possess a mix of the workload characteristics
+    \begin{itemize}
+        \item they ask for multicore microprocessors, CPUs, DSPs, FPGAs, GPUs
+        \item heterogeneous systems can improve performance and reduce energy consumption
+    \end{itemize}
+\end{itemize}
+
+\subsection{Heterogeneous Systems}
+\subsubsection{Heterogeneous System Architecture}
+\begin{itemize}
+    \item Heterogeneous System Architecture (HSA)
+    \begin{itemize}
+        \item a system architecture (maintained by the HSA Foundation) that allows accelerators, e.g. GPUs, to operate at the processing level as the system's CPU
+        \item goals
+        \begin{itemize}
+            \item different combinations of CPU and GPU processor cores operate as a unified processing engine
+            \item higher performance and lower power consumption
+        \end{itemize}
+        \item accelerators must meet certain requirements to be HSA-compliant
+        \begin{itemize}
+            \item ISA agnostic for both CPUs and accelerators
+            \item support high-level programming languages
+            \item provide the ability to access pageable system memory
+            \item maintain cache coherency for system memory with CPUs
+        \end{itemize}
+    \end{itemize}
+    \item HSA Foundation
+    \begin{itemize}
+        \item a consortium of vendors, OEMs, academia
+        \item to propose system architectures for combining CPUs, GPUs, DSPs and other accelerators
+        \item to bring forward progress in computing's foundation to make it easier to program heterogeneous parallel devices
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Device Architectures}
+\begin{itemize}
+    \item SIMD and Vector Processing
+    \begin{itemize}
+        \item hardware instructions target data parallel execution
+        \item SIMD: the same operation is performed on multiple data elements in parallel
+        \item Vector Processing: pipelining computations over long sequences of data elements
+    \end{itemize}
+    \begin{center}
+        \includegraphics[width=0.6\linewidth]{images/SIMDAndVectorProcessing}        
+    \end{center}
+    \item Hardware Multithreading
+    \begin{itemize}
+        \item multiple independent instruction streams (threads) are executed concurrently
+        \item Simultaneous Multithreading (SMT): instructions from multiple threads are interleaved on the execution resources
+        \begin{center}
+            \includegraphics[width=0.5\linewidth]{images/simultaneousMultithreading}
+        \end{center}
+        \item Temporal Multithreading: each thread is executed in consecutive execution slots; stalls of a single thread due to cache miss or other events can be covered by changing the order of thread execution and running more threads than necessary
+        \begin{center}
+            \includegraphics[width=0.8\linewidth]{images/temporalMultithreading}
+        \end{center}
+    \end{itemize}
+    \item Multi-Core Architectures
+    \begin{itemize}
+        \item downscaled version of the traditional multi-socket server SMP systems
+        \item in the simplest case, each of the cores executes largely independently, sharing data through the memory system, usually through a cache coherency protocol
+        \item multi-core systems can come in very different variants
+    \end{itemize}
+    \begin{center}
+        \includegraphics[width=0.6\linewidth]{images/multiCore}
+        \includegraphics[width=0.6\linewidth]{images/multicoreArchitectures}
+    \end{center}
+    \item Systems-On-Chip and the APU
+    \begin{itemize}
+        \item complicated systems-on-chip (SoC) combine varied components into a compact and cost-effective design
+        \item benefits: lower manufacturing costs, smaller form factor, less power consumption
+        \item typical components:
+        \begin{itemize}
+            \item implementation of the ARM ISA
+            \item mobile GPU
+            \item memory controllers
+            \item various wireless and media processing components
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{GPU Architectures}
+\begin{itemize}
+    \item Overview
+    \begin{itemize}
+        \item GPUs tend to be heavily multithreaded with sophisticated hardware task management
+        \item GPUs are designed to process graphics workload consisting of complex vertex, geometry, and pixel processing task graphs
+    \end{itemize}
+    \item Major Components
+    \begin{itemize}
+        \item compute units (streaming multiprocessors)
+        \item internal and external bus systems
+        \item global memory
+    \end{itemize}
+    \item Compute Unit
+    \begin{itemize}
+        \item processing elements (streaming processors)
+        \item thread schedulers and dispatchers
+        \item local memory, instruction cache, texture memory and cache
+    \end{itemize}
+\end{itemize}
+\begin{center}
+    \includegraphics[width=0.5\linewidth]{images/GPUArchitecture}
+\end{center}
+
+\subsubsection{GPU Properties}
+\begin{tabularx}{\linewidth}{|l|X|X|}
+    \hline
+     & \textbf{AMD Radeon RX 6900 XT} & \textbf{NVIDIA Titan RTX}\\
+    \hline
+    Engine Clock & 2015 MHz & 1350 MHz\\
+    Memory & 16 GiB GDDR6 & 24 GiB GDDR6\\
+    Memory Bandwidth & 512 GByte/s & 672 GByte/s\\
+    Compute Power (FP32) & 23 Tflop/s & 16.2 Tflop/s\\
+    Compute Units & 80 Compute Units & 72 Streaming Multiprocessors\\
+    FP32 Cores & 5120 (64/CU) & 4608 (64/SM)\\
+    OpenCL & 2.0 & 1.2\\
+    Microsoft C++ AMP & yes & yes\\
+    OpenACC & yes & yes\\
+    \hline
+\end{tabularx}
+
+\subsection{Programming Heterogeneous Systems}
+\begin{itemize}
+    \item OpenACC
+    \begin{itemize}
+        \item programming standard for parallel computing developed by Cray, CAPS, NVIDIA, and PGI
+        \item available since 2012
+    \end{itemize}
+    \item SYCL
+    \begin{itemize}
+        \item ''single source'' development in C++ (like AMP): functions can contain both host and device code
+        \item cross-platform abstraction layer that builds on OpenCL
+    \end{itemize}
+    \item C++ Accelerated Massive Parallelism (AMP)
+    \begin{itemize}
+        \item open specification from Microsoft for implementing data parallelism directly in C++
+        \item different groups have C++ AMP implemented in Clang/LLVM, with OpenCL as runtime
+    \end{itemize}
+    \item Compute Unified Device Architecture (CUDA)
+    \begin{itemize}
+        \item parallel computing platform and programming model created by NVIDIA and implemented by the GPUs of NVIDIA
+        \item available since 2007
+    \end{itemize}
+    \item Open Computing Language (OpenCL)
+    \begin{itemize}
+        \item C99 based language and framework for programming heterogeneous platforms
+        \item available since 2009
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Edge Detection}
+\begin{center}
+    \includegraphics[width=0.5\linewidth]{images/edgeDetection}
+\end{center}
+
+\subsubsection{AMP Overview}
+\begin{itemize}
+    \item Introduction
+    \begin{itemize}
+        \item library based on DirectX 11
+        \item AMP code that cannot be run on GPUs will fall back onto one or more CPUs instead and uses SSE instructions
+        \item HSA Foundations announced a C++ AMP compiler that outputs OpenCL; this allows AMP to go beyond Windows
+        \item the \lstinline{restrict(amp)} feature, which can be applied to any function (including lambdas) to declare that the function can be executed on a C++ AMP accelerator
+    \end{itemize}
+    \item Example: Vector Addition
+    \begin{multicols}{2}
+\begin{lstlisting}
+#include <amp.h>
+#include <iostream>
+using namespace concurrency;
+
+const int s = 5;
+void vecAdd() {
+    int aH[] = {1, 2, 3, 4, 5};
+    int bH[] = {6, 7, 8, 9, 10};
+    int rH[s];
+
+    array_view<const int, 1> a(s, aH);
+    array_view<const int, 1> b(s, bH);
+    array_view<int, 1> r(s, rH);
+    r.discard_data();
+
+    parallel_for_each(
+        r.extent,
+        [=](index<1> idx) restrict(amp)
+        {
+            r[idx] = a[idx] + b[idx];
+        }
+    );
+    // wait until the GPU has finished
+    // and the result has been copied
+    // back to rH
+    r.synchronize();
+
+    for (int i = 0; i < s; i++) {
+        std::cout << rH[i] << "\n";
+    }
+}
+\end{lstlisting}
+    \end{multicols}
+\end{itemize}
+
+\subsubsection{CUDA Overview}
+\begin{itemize}
+    \item Introduction
+    \begin{itemize}
+        \item CUDA gives program developers direct access to the virtual instruction set and memory of the parallel computational elements in NVIDIA CUDA GPUs
+        \item extensions to industry-standard programming languages, including C, C++ and Fortran
+        \item C/C++ programmers use 'CUDA C/C++', compiled with ''nvcc''
+        \end{itemize}
+    \item Example: Vector Addition (Kernel)
+\begin{lstlisting}
+__global__ void vecadd(int* a, int* b, int* r) {
+    // get the workitem's unique ID
+    const int idx = blockDim.x*blockIdx.x + threadIdx.x;
+    // add two vector elements
+    r[idx] = a[idx] + b[idx];
+}
+\end{lstlisting}
+\end{itemize}
+
+\subsubsection{OpenACC Overview}
+\begin{itemize}
+    \item Introduction
+    \begin{itemize}
+        \item designed to simplify parallel programming of heterogeneous systems
+        \item like in OpenMP, the programmer can annotate C, C++ and Fortran source code to identify the areas that should be accelerated using \lstinline{PRAGMA} compiler directives
+        \item unlike OpenMP, code can be started not only on the CPU, but also on the GPU
+        \item future goal: merge into OpenMP specification to create a common specification which extends OpenMP to support accelerators in a future release of OpenMP
+    \end{itemize}
+    \item Example: Vector Addition
+\begin{lstlisting}
+void vecadd(int* restrict r, int* a, int* b, int n) {
+    #pragma acc kernels loop copyin(a[0:n],b[0:n]) copyout(r[0:n])
+    for (int i = 0; i < n; ++i) r[i] = a[i] + b[i];
+}
+\end{lstlisting}
+\end{itemize}
+
+\subsubsection{SYCL Overview}
+\begin{itemize}
+    \item Introduction
+    \begin{itemize}
+        \item SYCL enables single source development where C++ template functions can contain both host and device code to construct complex algorithms that use OpenCL acceleration, and then reuse them throughout their source code on different types of data
+        \item SYCL is entirely standard C++ so there are no language extensions or attributes required
+    \end{itemize}
+    \item Implementations
+    \begin{itemize}
+        \item \href{https://developer.codeplay.com/home/}{ComputeCpp} - SYCL v1.2.1 conformant implementation by Codeplay Software
+        \item \href{https://github.com/intel/llvm/tree/sycl}{Intel LLVM SYCL oneAPI DPC++} - an open-source implementation of SYCL that is being contributed to the LLVM project
+        \item \href{https://github.com/illuhad/hipSYCL}{hipSYCL} - an open-source implementation of SYCL over NVIDIA CUDA and AMD HIP
+        \item \href{https://github.com/triSYCL/triSYCL}{triSYCL} - an open-source implementation led by Xilinx
+    \end{itemize}
+    \item SYCL Resources
+    \begin{itemize}
+        \item \href{https://www.codingame.com/playgrounds/48226/introduction-to-sycl/introduction-to-sycl-2}{Introduction to SYCL (codingame.com)}
+        \item \href{https://www.khronos.org/assets/uploads/developers/library/2019-cppcon/CppCon-Efficient-GPU-Programming_Sep19.pdf}{PowerPoint Presentation (khronos.org)}
+    \end{itemize}
+\end{itemize}
+
+\subsection{Introduction to OpenCL}
+\begin{itemize}
+    \item Introduction by Ofer Rosenberg, Visual Computing Software Division, Intel
+    \begin{itemize}
+        \item \href{https://www.speedup.ch/workshops/w38_2009/pdf/OpenCL_for_Speedup_new.pdf}{Parallel Computing for Heterogeneous Devices}
+    \end{itemize}
+    \item Specification
+    \begin{itemize}
+        \item \href{https://www.khronos.org/registry/OpenCL/}{Khronos OpenCL Registry - The Khronos Group Inc}
+    \end{itemize}
+    \item Quick Reference Cards
+    \begin{itemize}
+        \item \href{https://www.khronos.org/registry/OpenCL/sdk/1.2/docs/OpenCL-1.2-refcard.pdf}{OpenCL 1.2}
+        \item \href{https://www.khronos.org/registry/OpenCL/sdk/2.0/docs/OpenCL-2.0-refcard.pdf}{OpenCL 2.0}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Programming in OpenCL}
+\begin{itemize}
+    \item In general: 3 Major Code Blocks
+    \begin{itemize}
+        \item OpenCL device program: kernels and subroutines
+        \begin{itemize}
+            \item operations executed by the work items
+            \item C99 based syntax with vector operations
+        \end{itemize}
+        \item C++ host program: device and kernel preparation (reusable)
+        \begin{itemize}
+            \item platform and device handling
+            \item creating contexts and command queues
+            \item compiling OpenCL device programs
+        \end{itemize}
+        \item C++ host program: data and device program enqueing
+        \begin{itemize}
+            \item data allocation and management
+            \item filling in command queues
+            \item setting kernel arguments
+            \item running kernels
+            \item event handling
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\subsubsection{Vector Addition: OpenCL Kernel Code}
+\begin{lstlisting}
+__kernel void vecadd(__global int* a, __global int* b, __global int* r) {
+    // get the workitem's unique ID
+    const int idx = get_global_id(0);
+
+    // add two vector elements
+    r[idx] = a[idx] + b[idx];
+}
+\end{lstlisting}
+
+\subsubsection{Vector Addition: Get Platforms and Devices}
+\begin{lstlisting}
+cl::Context context;
+cl::CommandQueue queue;
+cl::Kernel kernel;
+vector<cl::Platform> platforms;
+vector<cl::Device> devices;
+
+// discover all available platforms
+cl::Platform::get(&platforms);
+
+for (cl::Platform& p: platforms) {
+    // get GPU devices of this platform
+    p.getDevices(CL_DEVICE_TYPE_GPU, &devices);
+
+    // continue with context creation and queue
+\end{lstlisting}
+
+\subsubsection{Vector Addition: Create Context and Queue}
+\begin{lstlisting}
+    // ...
+    if (!devices.empty()) {
+        // create context for the first device
+        cl::Device& dev = devices.front();
+        cl_context_properties cps[] = {
+            CL_CONTEXT_PLATFORM,
+            (cl_context_properties)(p)(),
+            0
+        };
+        context = cl::Context(CL_DEVICE_TYPE_GPU, cps);
+
+        // create command queue for the first device
+        queue = cl::CommandQueue(context, dev);
+    }
+} // end of for
+\end{lstlisting}
+
+\subsubsection{Vector Addition: Prepare Kernel}
+\begin{lstlisting}
+// open OpenCL source file
+ifstream file("vectoradd.cl");
+
+// read in file and store it in string s
+string s(istreambuf_iterator<char>(file), (istreambuf_iterator<char>()));
+file.close();
+
+// create source code object for one or more program codes
+cl::Program::Sources src(1, make_pair(s.c_str(), s.length() + 1));
+
+// create program object and load source code
+cl::Program program(context, src);
+
+// build the program for given devices
+program.build(devices);
+
+// selects a kernel in the program
+kernel = cl::Kernel(program, "vecadd");
+\end{lstlisting}
+
+\subsubsection{Vector Addition: Memory Management}
+\begin{lstlisting}
+const int N = 10000000;
+
+// allocate and initialize host memory buffers
+int *a = new int[N], *b = new int[N], *c = new int[N];
+for (int i = 0; i < N; ++i) {
+    a[i] = rand(); b[i] = rand();
+}
+
+// allocate memory buffers in the device context
+const size_t Size = N*sizeof(int);
+cl::Buffer bufferA(context, CL_MEM_READ_ONLY, Size);
+cl::Buffer bufferB(context, CL_MEM_READ_ONLY, Size);
+cl::Buffer bufferC(context, CL_MEM_WRITE_ONLY, Size);
+
+// copy host memory buffers to context memory buffers
+queue.enqueueWriteBuffer(bufferA, CL_TRUE, 0, Size, a);
+queue.enqueueWriteBuffer(bufferB, CL_TRUE, 0, Size, b);
+\end{lstlisting}
+
+\subsubsection{Vector Addition: Kernel Execution}
+\begin{lstlisting}
+// set the kernel arguments
+kernel.setArg(0, bufferA);
+kernel.setArg(1, bufferB);
+kernel.setArg(2, bufferC);
+
+// set the size of the n-dim workgroup size
+const int tileSize = 16;
+
+// run the kernel
+queue.enqueueNDRangeKernel(kernel, cl::NullRange, N, tileSize);
+
+// read the device bufferC back to the host memory array c
+queue.enqueueReadBuffer(bufferC, CL_TRUE, 0, Size, c);
+
+// free host memory buffers
+delete[] a;
+delete[] b;
+delete[] c;
+\end{lstlisting}
