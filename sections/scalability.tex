@@ -1,0 +1,377 @@
+%!TEX root = ../ProgAlg.tex
+\section{Scalability}
+
+\subsection{Scalability of Parallel Systems}
+
+\subsubsection{Theoretical Speedups: Amdahl}
+\begin{itemize}
+  \item Amdahl's Law (for fixed size of work W)
+  \begin{itemize}
+    \item How can the parallel runtime be shortened by making use of more processors?
+    \item \(W = W_{seq} + W_{par}\), where \(W_{seq} = \) non-parallelizable work, \(W_{par} = \) parallelizable work
+    \item \(f = \frac{W_{seq}}{"} \in [0,1]\)
+    \item \(W = f W + (1-f)W\)
+    \item speedup \(S = \frac{p}{1 + (p-1)f}\) \qquad \(\lim_{p \rightarrow \infty} S = \frac{1}{f}\)
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=\linewidth]{images/amdahlsLaw}
+\end{center}
+
+\subsubsection{Theoretical Speedups: Gustafson-Barsis}
+\begin{itemize}
+  \item Gustafson-Barsis' Law (for fixed parallel runtime)
+  \begin{itemize}
+    \item How can the parallel runtime be fixed by increasing both the number of processors and the problem size?
+    \item \(T_P = T_{seq} + T_{par}\), where \(T_{seq} = \) execution time for non-parallel work
+    \item \(\sigma = \frac{T_{seq}}{T_P} \in [0,1]\)
+    \item \(T_P = \sigma T_P + (1-\sigma) T_P\)
+    \item speedup \(S = \frac{\sigma T_P + p(1-\sigma)T_P}{\sigma T_P + (1-\sigma)T_P} = \sigma + p(1-\sigma) = p - (p-1)\sigma\)
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=\linewidth]{images/gustafsonBarsis}
+\end{center}
+
+\subsubsection{Experimental Speedup: Karp-Flatt}
+\begin{itemize}
+  \item Karp-Flatt Metric
+  \begin{itemize}
+    \item \(T_P(W,p) = T_{seq}(W) + T_{over}(W,p) + \frac{T_{par}(W)}{p}\)
+    \item given a parallel computation exhibiting speedup \(S\) on \(p > 1\) processors, the experimentally determined serial fraction \(e = \frac{\frac{1}{S} - \frac{1}{p}}{1 - \frac{1}{p}}\) is the Karp-Flatt metric
+    \item consistent to Amdahl and Gustafson-Barsis if the overhead time \(T_{over}\) for each involved processor is neglected
+    \begin{itemize}
+      \item Amdahl: \(S = \frac{p}{1+f(p-1)} \Leftrightarrow f = \frac{p-S}{S(p-1)} = \frac{\frac{1}{S} - \frac{1}{p}}{1 - \frac{1}{p}} = e\)
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.3\linewidth]{images/karpFlatt}
+\end{center}
+
+\subsubsection{Scalability of Parallel Systems}
+\begin{itemize}
+  \item Which algorithm is best suited for large problem instances?
+  \begin{itemize}
+    \item A comparison of the speedups obtained by three parallel algorithms for computing an \(n\)-point Fast Fourier Transform on 64 processing elements.
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.7\linewidth]{images/scalability}
+\end{center}
+
+\subsubsection{Scaling Characteristics}
+\begin{itemize}
+  \item Overhead and Efficiency
+  \begin{itemize}
+    \item Amdahl's Law: \(f = \) fraction of non-parallelizable work
+    \item Overhead \(T_O = p T_p - T_S = f \cdot (p-1)T_S\)
+    \item Efficiency \(E = \frac{S}{p} = \frac{T_S}{p T_P} = \frac{1}{1 + \frac{T_O}{T_S}}\)
+  \end{itemize}
+  \item Scaling-up the number of processing elements \(p\)
+  \begin{itemize}
+    \item How does the overhead \(T_O\) and the efficiency \(E\) change for a fixed problem size?
+    \begin{itemize}
+      \item the value of \(T_S\) remains constant
+      \item \(T_O\) increases as a consequence of Amdahl's Law
+      \item the overall efficiency of the parallel program goes down
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Scaling: Example}
+\begin{itemize}
+  \item adding \(n\) numbers on \(p\) processing elements
+  \begin{itemize}
+    \item we have seen that: 
+    \begin{align*}
+    T_P &= \frac{n}{p} + 2 log(p)\\
+    S &= \frac{n}{\frac{n}{p} + 2 log(p)}\\
+    E &= \frac{1}{1 + \frac{2p log(p)}{n}}
+    \end{align*}
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.5\linewidth]{images/scalingExample}
+\end{center}
+
+\subsubsection{Scalable Parallel Systems}
+\begin{itemize}
+  \item Recall
+  \begin{itemize}
+    \item \(W\) is the asymptotic number of operations associated with the best serial algorithm to solve the problem: \(W = \mathcal{O}(T_S)\)
+    \item overhead \(T_O(W,p)\) is a function of both problem size \(W\) and the number of processing elements \(p\)
+    \item cost-optimal parallel systems have an efficiency of \(\mathcal{O}(1)\)
+  \end{itemize}
+  \item Definition
+  \begin{itemize}
+    \item in many cases \textbf{\(T_O\) grows sub-linearly with respect to \(W\)}
+    \item in such cases, the efficiency increases if the problem size is increased keeping the number of processing elements constant
+    \item for such systems, we can simultaneously increase the problem size and the number of processors to keep efficiency constant
+    \item[\-] \(\rightarrow\) such systems arae called \textbf{scalable parallel systems}
+  \end{itemize}
+  \item Scalability and cost-optimality are related
+  \begin{itemize}
+    \item \textbf{a scalable parallel system can always be made cost-optimal} if the number of processing elements and the size of the computation are chosen appropriately
+  \end{itemize}
+\end{itemize}
+
+
+\subsection{Isoefficiency}
+
+\subsubsection{Efficiency as a Function of \(p\) and \(W\)}
+\begin{multicols}{2}
+\begin{itemize}
+  \item Fixed Problem Size \(W\)\\
+  as we increase the number of processing elements \(p\), the overall efficiency \(E\) of the parallel system \textbf{goes down for all systems}
+  \begin{center}
+    \includegraphics[width=\linewidth]{images/efficiency1}
+  \end{center}
+\end{itemize}
+\vfill\null
+\columnbreak
+\begin{itemize}
+  \item Fixed Number of Processing Elements \(p\)\\
+  \textbf{for scalable parallel systems}, the efficiency \(E\) of a parallel system increases if the problem size \(W\) is increased while keeping \(p\) constant
+  \begin{center}
+    \includegraphics[width=\linewidth]{images/efficiency2}
+  \end{center}
+\end{itemize}
+\end{multicols}
+
+\subsubsection{Isoefficiency Metric of Scalability}
+\begin{itemize}
+  \item Isoefficiency: Keeping the efficiency fixed
+  \begin{itemize}
+    \item What is the rate at which the problem size \(W\) must increase with respect to the number of processing elements \(p\) to keep the efficiency fixed?
+    \item This rate determines the scalability of the system. \textbf{The slower the rate, the better.}
+  \end{itemize}
+  \item Parallel Runtime
+  \begin{itemize}
+    \item \(T_P = \frac{W + T_O(W,p)}{p}\)
+  \end{itemize}
+  \item Speedup
+  \begin{itemize}
+    \item \(S = \frac{W}{T_P} = \frac{p W}{W + T_O(W,p)}\)
+  \end{itemize}
+  \item Efficiency
+  \begin{itemize}
+    \item \(E = \frac{S}{p} = \frac{W}{W + T_O(W,p)} = \frac{1}{1 + \frac{T_O(W,p)}{W}}\)
+  \end{itemize}
+  \item Fixed efficiency in scalable parallel systems
+  \begin{itemize}
+    \item the ratio \(T_O(W,p)/W\) is maintained at a constant value (between 0 and 1)
+    \begin{align*}
+      E = \frac{1}{1 + \frac{T_O(W,p)}{W}}\\
+      \frac{T_O(W,p)}{W} = \frac{1-E}{E}\\
+      W = \frac{E}{1-E} T_O(W,p)
+    \end{align*}
+  \end{itemize}
+  \item Isoefficiency Metric: \(W\) as a function \(f(p)\) for a fixed efficiency \(E\)
+  \begin{itemize}
+    \item \(W = K \cdot T_O(W,p)\) with constant \(K = \frac{E}{1-E}\)
+    \item Goal: express \(W\) as a function of \(p\): \(W = f(p)\)
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Isoefficiency Metric: Example 1}
+\begin{itemize}
+  \item adding \(n\) numbers on \(p\) processing elements
+  \item Parallel Runtime and Overhead
+  \begin{itemize}
+    \item total time \(T_P = n / p + log(p)\)
+    \item overhead \(T_O = p T_p - W = p log(p)\)
+  \end{itemize}
+  \item Isoefficiency
+  \begin{itemize}
+    \item \(W = K \cdot T_O(W,p)\) should be expressed as a function of \(p\): \(W = f(p)\)
+    \item problem size for fixed efficiency coefficient \(K\): \(W = K p log(p)\)
+    \item isoefficiency function: \(f(p) = \mathcal{O}(p log(p))\)
+  \end{itemize}
+  \item Interpretation
+  \begin{itemize}
+    \item \(\frac{W'}{W} = \frac{p' log(p')}{p log(p)}\)
+    \item if the number of processing elements is increased from \(\mathbf{p}\) to \(\mathbf{p'}\), the problem size \(W = n\) must be increased by a factor of \(\frac{p' log(p')}{p log(p)}\) to get the same efficiency as on \(\mathbf{p}\) processing elements 
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Isoefficiency Metric: Example 2}
+\begin{itemize}
+  \item Hypothetical Parallel System
+  \begin{itemize}
+    \item Overhead \(T_O = p^{3/2} + p^{3/4} W^{3/4}\)
+    \item solving \(W = K T_O(W,p)\) for \(W\) in terms of \(p\) is hard
+  \end{itemize}
+  \item Simplified overhead functions
+  \begin{itemize}
+    \item using only the first term of \(T_O\): \(W = K p^{3/2}\)
+    \item using only the second term of \(T_O\): \(W = K p^{3/4} W^{3/4}\)
+    \begin{align*}
+      W = K p^{\frac{3}{4}} W^{\frac{3}{4}}\\
+      \frac{\sqrt[4]{W^4}}{\sqrt[4]{W^3}} = \sqrt[4]{W} = K p^{\frac{3}{4}}\\
+      W = K^4p^3  
+    \end{align*}
+    \(\rightarrow\) the larger of these two asymptotic rates (\(p^{3/2}\) and \(p^{3}\)) determines the isoefficiency: \(f(p) = \mathcal{O}(p^3)\) 
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Cost-Optimality and Isoefficiency}
+\begin{itemize}
+  \item Cost-Optimality
+  \begin{itemize}
+    \item parallel runtime \(T_P = \frac{W + T_O(W,p)}{p}\)
+    \item a parallel system is cost-optimal iff \(\text{Cost} = p \cdot T_P = \mathcal{O}(W)\)
+  \end{itemize}
+  \item Lower Bound
+  \begin{itemize}
+    \item[\-]
+    \begin{align*}
+      W + T_O(W,p) &= \mathcal{O}(W)\\
+      T_O(W,p) &= O(W)\\
+      W &= \Omega(W_O(W,p))
+    \end{align*}
+    \item let \(f(p)\) be the isoefficiency function
+    \item \(W = K \cdot T_O(W,p) = f(p)\)
+    \item cost-optimality of a parallel system (as it is scaled-up) is ensured if \(W = \Omega(f(p))\)
+  \end{itemize}
+  \item Example: adding \(n\) numbers on \(p\) processing elements
+  \begin{itemize}
+    \item isoefficiency function: \(f(p) = p log(p)\)
+    \item cost-optimality: \(n = W = \Omega(p log(p))\)
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Lower Bound on Isoefficiency}
+\begin{itemize}
+  \item Recall
+  \begin{itemize}
+    \item smaller isoefficiency functions \(f(p)\) indicates higher scalability
+  \end{itemize}
+  \item Lower Bound on Isoefficiency
+  \begin{itemize}
+    \item for a problem size \(W\) no more than \(W\) processors can be used cost-optimally
+    \item \(W\) must increase at least as fast as \(\mathcal{O}(p)\) to maintain fixed efficiency: \(f(p) = \Omega(p)\)
+    \begin{align*}
+      p &= O(W)\\
+      W &= \Omega(p)\\
+      W &= f(p) = \Omega(p)
+    \end{align*}
+    \(\rightarrow\) ideal isoefficiency \(f(p) = p\)
+  \end{itemize}
+\end{itemize}
+
+\subsection{Degree of Concurrency}  
+
+\subsubsection{Degree of Concurrency and Isoefficiency}
+\begin{itemize}
+  \item Recall
+  \begin{itemize}
+    \item parallel overhead \(T_O\) is a sum of different overheads due to communication, concurrency, and excess computation
+  \end{itemize}
+  \item Degree of Concurrency: \(C(W)\)
+  \begin{itemize}
+    \item Definition: the maximum number of operations (tasks) that can be executed simultaneously at any time in a parallel algorithm
+    \item it is independent of the parallel architecture
+    \item no more than \(C(W)\) processing elements can be employed effectively
+  \end{itemize}
+  \item Effect of \(C(W)\) on Isoefficiency
+  \begin{itemize}
+    \item isoefficiency due to concurrency is optimal only if \(C(W) = \mathcal{O}(W)\)
+    \item if \(C(W) < \mathcal{O}(W)\) then the isoefficiency due to concurrency is worse than \(\mathcal{O}(p)\)\\
+    \(\rightarrow\) the overall isoefficiency function is given by the maximum of the isoefficiency functions due to concurrency, communication, and other overheads
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Degree of Concurrency: Example}
+\begin{itemize}
+  \item Problem
+  \begin{itemize}
+    \item solving a system of \(n\) equations in \(n\) variables by using Gaussian elimination \(W = \mathcal{n^3}\)
+  \end{itemize}
+  \item Approach
+  \begin{itemize}
+    \item the \(n\) variables must be eliminated sequentially, one after the other, and eliminating each variable requires \(\mathcal{O}(n^2)\) computations\\
+    \(\rightarrow\) at most \(\mathcal{O}(n^2)\) processing elements can be kept busy at any time\\
+    \(\rightarrow\) \(p = O(W^{2/3})\)
+  \end{itemize}
+  \item Degree of Concurrency
+  \begin{itemize}
+    \item \(C(W) = O(W^{2/3}) < \mathcal{O}(W)\)
+  \end{itemize}
+  \item Minimum Problem Size
+  \begin{itemize}
+    \item given \(p\) processing elements, the problem size \(W\) should be at least \(\Omega(p^{3/2})\) to use them all: \(W = \Omega(p^{3/2})\)\\
+    \item[\-] \(p = O(C(W)) = O(W^{3/2}) \rightarrow p^{3/2} = O(W) \rightarrow \Omega(p^{3/2}) = W\)
+  \end{itemize}
+\end{itemize}
+
+\subsection{Minimum Execution Times}
+
+\begin{itemize}
+  \item Minimum Execution Time \(T_p^{min}\)
+  \begin{itemize}
+    \item \(\frac{d}{dp}T_p = 0\), let \(p_0\) be the value of \(p\) as determined by this equation \(T_p^{\text{min}} \begin{cases}
+      T_p(p_0) = \frac{W + T_O(W,p_0)}{p_0}, & \text{if } p_0 \leq C(W)\\
+      T_p(C(W)) = \frac{W + T_O(W,C(W))}{C(W)}, & \text{else}
+    \end{cases}\)
+  \end{itemize}
+  \item Minimum Cost-Optimal Execution Time \(T_p^{\text{cost\_opt}}\)
+  \begin{itemize}
+    \item if the isoefficiency function of a parallel system is \(f(p)\), then a problem of size \(W\) can be solved cost-optimally iff \(W = \Omega(f(p))\)
+    \item if \(W = \Omega(f(p))\), then \(f(p) = O(W)\), then \(p = O(f^{-1}(W))\)
+    \item for cost-optimal systems the overhead is \(O(1)\): \(T_P = \mathcal{O}(W/p)\)\\
+    \(T_P^{\text{cost\_opt}} = \Omega(\frac{W}{f^{-1}(W)})\)
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Minimum Execution Time: Example}
+\begin{itemize}
+  \item adding \(n\) numbers on \(p\) processing elements
+  \begin{itemize}
+    \item parallel execution time \(T_P = n/p + 2 log(p)\)
+    \begin{align*}
+      \frac{d}{dp} T_P &= - \frac{n}{p^2} + \frac{2}{p} = 0\\
+      -n + 2p &= 0\\
+      p &= \frac{n}{2} = p_0\\
+      T_P^{\text{min}} &= T_{p_0} = n/p_0 + 2 log(p_0) = 2 log(n)
+    \end{align*}
+    \item number of processors for minimum execution time: \(p_0 = n/2\)
+    \item \(\text{Cost} = p_0 T_p^{\text{min}} = \frac{n}{2} 2 log(n) = n log(n)\), is not cost-optimal
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Minimum Cost-Optimal Parallel Time: Example}
+\begin{itemize}
+  \item adding \(n\) numbers on \(p\) processing elements
+  \begin{itemize}
+    \item[\-] \(T_P = \mathcal{O}(n/p + log(p)) \qquad \qquad W = n = K p log(p)\)
+    \item Isoefficiency \(f(p) = p log(p)\)
+    \item[\-] \(p = f^{-1}(W) = n/(K log(p)) \qquad \qquad f^{-1}\) has to be a function of \(W\) not \(p\)
+    \item Approximation of \(log(p)\): \(log(n) = log(K) + log(p) + log(log(p)) \approx log(p)\)
+    \item[\-] \(p = f^{-1}(W) = n/(K log(p)) \approx \mathcal{O}(n/log(n))\)  
+  \end{itemize}
+  \item Maximum number of processing elements to solve the problem cost-optimally
+  \item[\-] \(p^{\text{cost\_opt}} \approx \mathcal{O}(n/log(n))\)
+  \item Minimum Cost-Optimal Execution Time
+  \item[\-] \begin{align*}
+    T_p^{\text{cost\_opt}} = T_{p^{\text{cost\_opt}}} = \frac{n}{p^{\text{cost\_opt}}} + log(p^{\text{cost\_opt}})\\
+    \approx \frac{n}{\frac{n}{log(n)}} + log(\frac{n}{log(n)}) = log(n) + log(n) - log(log(n)) = 2 log(n) - log(log(n))
+  \end{align*}
+\end{itemize}
+
+\subsubsection{Evaluation of Sorting Algorithms}
+\begin{itemize}
+  \item Let A1, A2, A3, and A4 be four different algorithms for the same problem, namely sorting a list of \(n\) numbers.
+  \item Which is the best algorithm?\\
+  \begin{tabularx}{0.5\linewidth}{lXXXX}
+    \hline
+    Algorithm & A1 & A2 & A3 & A4\\
+    \hline
+    \(p\) & \(n^2\) & \(log(n)\) & \(n\) & \(\sqrt{n}\)\\
+    \(T_P\) & \(1\) & \(n\) & \(\sqrt{n}\) & \(\sqrt{n} log(n)\)\\
+    \(S\) & \(n log(n)\) & \(log(n)\) & \(\sqrt{n} log(n)\) & \(\sqrt{n}\)\\
+    \(E\) & \(\frac{log(n)}{n}\) & \(1\) & \(\frac{log(n)}{\sqrt{n}}\) & \(1\)\\
+    \(p T_P\) & \(n^2\) & \(n log(n)\) & \(n^{1.5}\) & \(n log(n)\)\\
+    \hline
+  \end{tabularx}
+\end{itemize}
