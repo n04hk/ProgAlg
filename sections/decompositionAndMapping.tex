@@ -1,0 +1,639 @@
+%!TEX root = ../ProgAlg.tex
+\section{Decomposition and Mapping Techniques}
+
+\subsection{Parallel Algorithm Design}
+\begin{itemize}
+  \item Specifying a nontrivial parallel algorithm may include
+  \begin{itemize}
+    \item identifying portions of the work that can be performed concurrently (\textit{decomposition})
+    \item \textit{mapping} the concurrent pieces of work onto multiple processes running in parallel
+    \item distributing the input, output, and intermediate data associated with the program
+    \item managing accesses to data shared by multiple processors
+    \item synchronizing the processors at various stages of the parallel program execution
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Example: Multiplying a Dense Matrix with a Vector}
+\begin{multicols}{2}
+  \includegraphics[width=\linewidth]{images/exampleDenseMatrix}
+  \vfill\null
+  \columnbreak
+  Computation of each element of output vector \(y\) is independent of other elements.
+  Based on this, a dense matrix-vector product can be decomposed into \textbf{\textit{n} indepdendent tasks}.
+  The figure highlights the portion of the matrix and vector accessed by Task 1.  
+
+  \textbf{Observations:}\\
+  While tasks share data (namely, the vector \(b\)), they do not have any control dependencies - i.e., no task needs to wait for the (partial) completion of any other.
+  All tasks are of the same size in terms of number of operations.
+\end{multicols}
+
+\subsubsection{Example: Database Query Processing}
+Consider the execution of the query:\\
+\textit{MODEL = ''CIVIC'' AND YEAR = 2001 AND (COLOR = ''GREEN'' OR COLOR = ''WHITE'')}\\
+on the follwing database:\\
+\begin{tabularx}{\linewidth}{lXXXXX}
+  \hline
+  \hline
+  ID\# & Model & Year & Color & Dealer & Price\\
+  \hline
+  4523 & Civic & 2002 & Blue & MN & \$18,000\\
+  3476 & Corolla & 1999 & White & IL & \$15,000\\
+  7623 & Camry & 2001 & Green & NY & \$21,000\\
+  9834 & Prius & 2001 & Green & CA & \$18,000\\
+  \rowcolor{grey}
+  6734 & Civic & 2001 & White & OR & \$17,000\\
+  5342 & Altima & 2001 & Green & FL & \$19,000\\
+  3845 & Maxima & 2001 & Blue & NY & \$22,000\\
+  8354 & Accord & 2000 & Green & VT & \$18,000\\
+  4395 & Civic & 2001 & Red & CA & \$17,000\\
+  7352 & Civic & 2002 & Red & WA & \$18,000\\
+  \hline
+\end{tabularx}
+\begin{itemize}
+  \item Execution of the Query can be divided into subtasks in various ways
+  \begin{itemize}
+    \item each task can be thought of as generating an intermediate table of entries that satisfy a particular clause
+  \end{itemize}
+  \begin{center}
+    \includegraphics[width=0.6\linewidth]{images/exampleQuery}
+  \end{center}
+\end{itemize}
+
+\subsection{Task Dependency Graph}
+\begin{minipage}{0.6\linewidth}
+\begin{itemize}
+  \item Definition
+  \begin{itemize}
+    \item a \textit{node} corresponds to task
+    \item an \textit{edge} indicates that the result of one task is required for processing the next
+    \item a \textit{directed path} represents a sequence of tasks that must be processed one after the other
+  \end{itemize}
+  \item Critical Path Length
+  \begin{itemize}
+    \item the length of the longest directed path is called the critical path length (= path with maximum amount of work)
+    \item the longest such path determines the shortest time in which the program can be executed in parallel
+  \end{itemize}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.4\linewidth}
+  \begin{center}
+    \includegraphics[width=0.7\linewidth]{images/taskDependencyGraph}
+  \end{center}
+\end{minipage}
+
+\subsubsection{Degree of Concurrency}
+\begin{itemize}
+  \item Definition
+  \begin{itemize}
+    \item the number of tasks that can be executed in parallel
+  \end{itemize}
+  \item Degree of Concurrency may change over program execution
+  \begin{itemize}
+    \item the \textit{maximum degree of concurrency} is the maximum number of tasks at any point during execution
+    \item the \textit{average degree of concurrency} is the average number of tasks that can be processed in parallel over the execution of the program
+  \end{itemize}
+  \item Effect of finer Granularity
+  \begin{itemize}
+    \item a fine-grained decomposition results into a large number of tasks
+    \item a coarse-grained decomposition results in a small number of tasks
+    \item the degree of concurrency increases as the decomposition becomes finer in granularity and vice versa
+  \end{itemize}
+\end{itemize}
+
+\subsection{Task Interaction Graph}
+\begin{itemize}
+  \item Definition
+  \begin{itemize}
+    \item the graph of tasks (nodes) and their interactions/data exchange (edges) is referred to as a \textit{task interaction graph}
+  \end{itemize}
+  \item Note
+  \begin{itemize}
+    \item \textit{task interaction graphs} represent data dependencies
+    \item \textit{task dependency graphs} represent control dependencies
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Example: Multiplying a sparse matrix A with vector b}
+\begin{center}
+  \includegraphics[width=0.8\linewidth]{images/taskInteractionGraph}
+\end{center}
+
+\subsection{Decomposition Techniques}
+\begin{itemize}
+  \item How does one decompose a task into various subtasks?
+  \begin{itemize}
+    \item recursive decomposition\\
+    (generally suited to problems that are solved using the divide-and-conquer strategy)
+    \begin{itemize}
+      \item a given problem is first decomposed into a set of sub-problems
+      \item these sub-problems are recursively decomposed further until a desired granularity is reached
+    \end{itemize}
+    \item data decomposition
+    \begin{itemize}
+      \item partitions data (input, output, intermediate) used in computations across various tasks
+      \item this partitioning induces a decomposition of the problem
+    \end{itemize}
+    \item exploratory decomposition
+    \begin{itemize}
+      \item the decomposition of the problem goes hand-in-hand with its execution
+      \item these problems typically involve the exploration (search) of a state space of solutions
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Example of Recursive Decomposition}
+\begin{minipage}{0.5\linewidth}
+\begin{itemize}
+  \item Problem
+  \begin{itemize}
+    \item finding the minimum number in the set \({4, 9, 1, 7, 8, 11, 2, 12}\)
+  \end{itemize}
+  \item Approach
+  \begin{itemize}
+    \item divide-and-conquer (recursive decomposition)
+  \end{itemize}
+  \item Task Dependency Graph
+  \begin{center}
+    \includegraphics[width=0.8\linewidth]{images/recursiveDecomposition}
+  \end{center}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.5\linewidth}
+\begin{lstlisting}
+procedure Rmin(A,n)
+begin
+  if (n = 1) then
+    return A[0];
+  else
+    lmin := Rmin(A, n/2);
+    rmin := Rmin(&(A[n/2]), n - n/2);
+    if (lmin < rmin) then
+      min := lmin;
+    else
+      min := rmin
+    end
+    return min;
+  end
+end
+\end{lstlisting}
+\end{minipage}
+
+\subsubsection{Example of Data Decomposition}
+\textbf{Input Data Partitioning:}
+\begin{itemize}
+  \item Approach
+  \begin{itemize}
+    \item a task is associated with each input data partition
+    \item the task performs as much of the computation with its part of the data
+    \item subsequent processing combines these partial results
+  \end{itemize}
+  \item Requirements
+  \begin{itemize}
+    \item generally applicable if each \textbf{output} can be naturally computed as \textbf{a function of the input}
+  \end{itemize}
+  \item Owner Computes Rule
+  \begin{itemize}
+    \item \textbf{the task that assigned a particular data item is responsible for all computation associated with it}
+    \item the rule implies that all computations that use the input data assigned to a task \(t\) are performed by the task \(t\)
+  \end{itemize}
+\end{itemize}
+
+\textbf{Output Data Partitioning:}
+\begin{itemize}
+  \item Example
+  \begin{itemize}
+    \item mulityplying two \(n\) x \(n\) matrices \(A\) and \(B\) to yield matrix \(C\)
+  \end{itemize}
+  \item Approach
+  \begin{itemize}
+    \item the output matrix \(C\) can be partitioned into four tasks as follows
+  \end{itemize}
+  \item Owner Computes Rule
+  \begin{itemize}
+    \item the rule implies that the output is computed by the task to which the output data is assigned
+    \[
+      \left(
+      \begin{matrix}
+        A_{1,1} & A_{1,2}\\
+        A_{2,1} & A_{2,2}\\
+      \end{matrix}
+      \right)
+      \cdot
+      \left(
+      \begin{matrix}
+        B_{1,1} & B_{1,2}\\
+        B_{2,1} & B_{2,2}\\
+      \end{matrix}
+      \right)
+      \rightarrow
+      \left(
+      \begin{matrix}
+        C_{1,1} & C_{1,2}\\
+        C_{2,1} & C_{2,2}\\
+      \end{matrix}
+      \right)
+    \]
+    \[
+      C_{1,1} = A_{1,1} B_{1,1} + A_{1,2} B_{2,1}
+    \]
+    \[
+      C_{1,2} = A_{1,1} B_{1,2} + A_{1,2} B_{2,2}
+    \]
+    \[
+      C_{2,1} = A_{2,1} B_{1,1} + A_{2,2} B_{2,1}
+    \]
+    \[
+      C_{2,2} = A_{2,1} B_{1,2} + A_{2,2} B_{2,2}
+    \]
+  \end{itemize}
+\end{itemize}
+
+\textbf{Intermediate Data Partitioning}\\
+\begin{minipage}{0.6\linewidth}
+\begin{itemize}
+  \item Observation
+  \begin{itemize}
+    \item computation can often be viewed as a sequence of transformation from the input to the output data
+    \item in these cases, it is often beneficial to use one of the intermediate stages as a basis for decomposition
+  \end{itemize}
+  \item Example
+  \begin{itemize}
+    \item dense matrix multiplication
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.8\linewidth]{images/intermediateDataPartitioning}
+\end{center}
+\end{minipage}%
+\begin{minipage}{0.4\linewidth}
+  \begin{center}
+    \includegraphics[width=0.8\linewidth]{images/intermediateDataPartitioning2}
+  \end{center}
+\end{minipage}
+
+\subsubsection{Exploratory Decomposition}
+\begin{minipage}{0.7\linewidth}
+\begin{itemize}
+  \item Example
+  \begin{itemize}
+    \item \href{https://www.archimedes-lab.org/game_slide15/slide15_puzzle.html}{15 puzzle} (a tile puzzle)
+  \end{itemize}
+  \item Exploration
+  \begin{itemize}
+    \item a short sequence of three moves that transforms a given initial state (a) to desired final state (d)
+  \end{itemize}
+  \begin{center}
+    \includegraphics[width=0.6\linewidth]{images/exploratoryDecomposition}
+  \end{center}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.3\linewidth}
+  \begin{center}
+    \includegraphics[width=\linewidth]{images/exploratoryDecomposition2}
+  \end{center}
+\end{minipage}
+
+\subsection{Mapping of Tasks to Processes}
+\begin{itemize}
+  \item Need for mapping of Tasks to Processes
+  \begin{itemize}
+    \item in general, the number of tasks in a decomposition exceeds the number of processing elements available
+    \item for this reason, a parallel algorithm must also provide a mapping of tasks to processes
+  \end{itemize}
+  \item Influences
+  \begin{itemize}
+    \item mappings are determined by both the task dependency and task interaction graphs
+    \begin{itemize}
+      \item task dependency graphs can be used to ensure that work is equally spread across all processes at any point (minium idling and optimal load balance)
+      \item task interaction graphs can be used to make sure that processes need minimum interaction with other processes (minimum communication)
+    \end{itemize}
+  \end{itemize}
+  \item Goals
+  \begin{itemize}
+    \item mapping independent tasks to different processes
+    \item assigning tasks on critical path to processes as soon as they become available
+    \item minimizing interaction between processes by mapping tasks with dense interactions to the same process
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Example}
+\begin{minipage}{0.5\linewidth}
+  \begin{center}
+    \includegraphics[width=0.7\linewidth]{images/processAndMapping}
+  \end{center}
+\end{minipage}%
+\begin{minipage}{0.5\linewidth}
+  \begin{center}
+    \includegraphics[width=0.7\linewidth]{images/processAndMapping2}
+  \end{center}
+\end{minipage}
+\begin{itemize}
+  \item Mapping tasks in the database query deomposition to processes
+  \begin{itemize}
+    \item these two mappings were arrived at by viewing the dependency graph in terms of levels (no two nodes in a level have dependencies)
+  \end{itemize}
+\end{itemize}
+
+\subsection{Parallel Algorithm Models}
+\begin{itemize}
+  \item What is a parallel algorithm model?
+  \begin{itemize}
+    \item a combination of a decomposition and mapping technique and applying the appropriate strategy to minimize interactions
+  \end{itemize}
+  \item Different Algorithm Models
+  \begin{itemize}
+    \item Data Parallel Model
+    \begin{itemize}
+      \item[\-] tasks are statically (or semi-statically) mapped to processes and each task performs similar operations on different data
+    \end{itemize} 
+    \item Task Graph Model
+    \begin{itemize}
+      \item[\-] starting from a task dependency graph, the interrelationships among the tasks are utilized to promote locality or to reduce interaction costs
+    \end{itemize}
+    \item Master-Slave Model
+    \begin{itemize}
+      \item[\-] one or more processes generate work and allocate it to worker processes; this allocation may be static or dynamic
+    \end{itemize}
+    \item Pipeline/Producer-Consumer Model
+    \begin{itemize}
+      \item[\-] a stream of data is passed through a succession of processes, each of which perform some tasks on it
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\subsection{Mapping Techniques for Load Balancing}
+\begin{itemize}
+  \item Requirements
+  \begin{itemize}
+    \item mappings must minimize overheads (communication and idling)
+    \item minimizing these overheads often represents contradicting objectives
+    \begin{itemize}
+      \item Example: assigning all work to one processor trivially minimizes communication at the expense of siginificant idling
+    \end{itemize}
+  \end{itemize}
+  \item Techniques for Minimum Idling
+  \begin{itemize}
+    \item mapping must simultaneously load balance and minimize idling
+    \item \textit{Static Mapping}: tasks are mapped to processes a-priori
+    \begin{itemize}
+      \item we must have a good estimate of the size of each task
+      \item finding an optimum might be NP complete
+    \end{itemize}
+    \item \textit{Dynamic Mapping (Dynamic Load Balancing)}: tasks are mapped to processes at runtime
+    \begin{itemize}
+      \item static mapping is not possible, because the tasks are generated at runtime or their sizes are unknown
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Mapping Schemes}
+\begin{itemize}
+  \item Schemes for Static Mapping
+  \begin{itemize}
+    \item mappings based on data partitioning
+    \item mappings based on task graph partitioning
+    \item hybrid mappings
+  \end{itemize}
+  \item Schemes for Dynamic Mapping
+  \begin{itemize}
+    \item centralized
+    \begin{itemize}
+      \item \textit{master} manages a pool of available tasks
+      \item \textit{slaves} that run out of work request the master for more work
+      \item Example: sorting the entries in each row of an \(n\) x \(n\) matrix
+    \end{itemize}
+    \item distributed
+    \begin{itemize}
+      \item each process can send or receive work from other processes
+      \item this alleviates the bottleneck in centralized schemes
+      \item there are four critical questions
+      \begin{itemize}
+        \item how are sending and receiving processes paired together?
+        \item who initiates work transfer?
+        \item how much work is transferred?
+        \item when is a transfer triggered?
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Mappings Based on Data Partitioning}
+\begin{itemize}
+  \item Data Partitioning combined with the ''Owner Computes Rule''
+  \begin{itemize}
+    \item the simplest data decomposition schemes for dense matrices are 1-D block distribution schemes
+    \begin{center}
+      \includegraphics[width=0.5\linewidth]{images/mappingDataDecomposition}
+    \end{center}
+    \item block distribution schemes can be generalized to higher dimensions as well
+    \begin{center}
+      \includegraphics[width=0.5\linewidth]{images/mappingDataDecomposition2}
+    \end{center}
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Block Array Distribution Schemes: Examples}
+\begin{itemize}
+  \item Problem
+  \begin{itemize}
+    \item multiplying two dense matrices \(A\) and \(B\)
+  \end{itemize}
+  \item Approach
+  \begin{itemize}
+    \item we can partition the output matrix \(C\) using a block decomposition
+  \end{itemize}
+  \item Notes
+  \begin{itemize}
+    \item for load balance, we give each process the same number of elements of \(C\)
+    \item the choice of precise decomposition (1-D or 2-D) is determined by the associated communication overhead
+    \item in general, higher dimension decomposition allows the use of larger number of processes
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=\linewidth]{images/blockArrayDistributionScheme}
+\end{center}
+
+\subsubsection{Cyclic and Block-Cyclic Distributions}
+\begin{itemize}
+  \item Varying Amount of Computation
+  \begin{itemize}
+    \item a block decomposition may lead to significant load imbalances if the amount of computation associated with data items varies
+    \item Example
+    \begin{itemize}
+      \item LU decomposition
+    \end{itemize}
+  \end{itemize}
+  \item (Block-) Cyclic Distributions
+  \begin{itemize}
+    \item variation of the block distribution scheme that can be used to alleviate the load-imbalance and idling problems
+    \item partition \(n\) data elements into \(\alpha p\) blocks (\(1 \leq \alpha \leq n/p\), \(p\): the number of available processes)
+    \item blocks are assigned to processes in a round-robin manner so that each process gets several non-adjacent blocks
+    \item Example
+    \begin{itemize}
+      \item LU decomposition (or Gaussian Elimination) of dense matrices
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\textbf{Block-Cyclic Distributions}
+\begin{itemize}
+  \item Cyclic Distribution
+  \begin{itemize}
+    \item \(\alpha = n/p\) is a special case of a block-cyclic distribution in which block size is 1
+  \end{itemize}
+  \item Block Distribution
+  \begin{itemize}
+    \item \(\alpha = 1\) is a special case of a block-cyclic distribution in which block size is \(n/p\), where \(n\) is the dimension of the matrix and \(p\) is the number of processes 
+  \end{itemize}
+  \item Examples
+  \begin{center}
+    \includegraphics[width=0.6\linewidth]{images/blockCyclicDistributions}
+  \end{center}
+\end{itemize}
+
+\subsubsection{Solving a System of Linear Equations}
+\begin{itemize}
+  \item Problem
+  \begin{itemize}
+    \item let \(A\) be a nonsingular square matrix and let \(b\) be a solution vector of length \(n\)
+    \item solving the system \(Ax = b\) for \(x\)
+  \end{itemize}
+  \item Approach: Gaussian Elimination Algorithm (LU decomposition)
+  \begin{itemize}
+    \item \(A = LU\)
+    \begin{itemize}
+      \item \(L\): lower triangular matrix
+      \item \(U\): upper triangular matrix with a unit diagonal
+    \end{itemize}
+    \item \(Ly = b \qquad\) forward substitution (start with \(y_1 = b_1/l_{11}\)): \(y_i = \frac{1}{l_{ii}} \left( b_i - \sum_{k=1}^{i-1} l_{ik} \cdot y_k \right) \)
+    \item \(y = Ux \qquad\) back substitution (start with \(x_n = y_n / u_{nn}\)): \(x_i = \frac{1}{u_{ii}} \left( y_i - \sum_{k=i+1}^{n} u_{ik} \cdot x_k \right)\)
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{LU Decomposition}
+\begin{itemize}
+  \item A decomposition of LU factorization into 14 tasks
+  \begin{itemize}
+    \item notice the significant load imbalance
+  \end{itemize}
+\end{itemize}
+\[
+  \left(
+  \begin{matrix}
+    A_{1,1} & A_{1,2} & A_{1,3}\\
+    A_{2,1} & A_{2,2} & A_{2,3}\\
+    A_{3,1} & A_{3,2} & A_{3,3}\\
+  \end{matrix}
+  \right)
+  \rightarrow
+  \left(
+  \begin{matrix}
+    L_{1,1} & 0 & 0\\
+    L_{2,1} & L_{2,2} & 0\\
+    L_{3,1} & L_{3,2} & L_{3,3}\\
+  \end{matrix}
+  \right)
+  \cdot
+  \left(
+  \begin{matrix}
+    U_{1,1} & U_{1,2} & U_{1,3}\\
+    0 & U_{2,2} & U_{2,3}\\
+    0 & 0 & U_{3,3}\\
+  \end{matrix}
+  \right)
+\]
+\begin{tabularx}{\linewidth}{l|l|l}
+  1: \(A_{1,1} \rightarrow L_{1,1} U_{1,1}\) & 6: \(A_{2,2} = A_{2,2} - L_{2,1} U_{1,2}\) & 11: \(L_{3,2} = A_{3,2} U_{2,2}^{-1}\)\\
+  2: \(L_{2,1} = A_{2,1} U_{1,1}^{-1}\) & 7: \(A_{2,3} = A_{2,3} - L_{2,1} U_{1,3}\) & 12: \(U_{2,3} = L_{2,2}^{-1} A_{2,3}\)\\
+  3: \(L_{3,1} = A_{3,1} U_{1,1}^{-1}\) & 8: \(A_{3,2} = A_{3,2} - L_{3,1} U_{1,2}\) & 13: \(A_{3,3} = A_{3,3} - L_{3,2} U_{2,3}\)\\
+  4: \(U_{1,2} = L_{1,1}^{-1} A_{1,2}\) & 9: \(A_{3,3} = A_{3,3} - L_{3,1} U_{1,3}\) & 14: \(A_{3,3} \rightarrow L_{3,3} U_{3,3}\)\\
+  5: \(U_{1,3} = L_{1,1}^{-1} A_{1,3}\) & 10: \(A_{2,2} \rightarrow L_{2,2} U_{2,2}\) & \\
+\end{tabularx}
+
+\subsubsection{Serial Gaussian Elimination}
+\begin{lstlisting}
+procedure GAUSSIAN_ELIMINATION (A, b, y)
+begin
+  for k := 0 to n - 1 do    /* Outer loop */
+  begin
+    for j := k + 1 to n - 1 do
+      A[k, j] := A[k, j]/A[k, k];    /* Division step */
+    y[k] := b[k]/A[k, k];
+    A[k, k] := 1;
+    for i := k + 1 to n - 1 do
+    begin
+      for j := k + 1 to n - 1 do
+        A[i, j] := A[i, j] - A[i, k] x A[k, j]; /* Elimination step */
+      b[i] := b[i] - A[i, k] x y[k];
+      A[i, k] := 0;
+    endfor;
+  endfor;
+end GAUSSIAN_ELIMINATION
+\end{lstlisting}
+
+\subsubsection{Block-Cyclic Distribution for Gaussian Elimination}
+\begin{itemize}
+  \item Observation
+  \begin{itemize}
+    \item the active part of the matrix in Gaussian Elimination changes with \(k\)
+    \item by assigning blocks in a block-cyclic fashion, each processor receives blocks from different parts of the matrix, so almost each process will be involved in each of the \(k\) iterations
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.5\linewidth]{images/blockCyclicDistributionGaussianElimination}
+\end{center}
+
+\subsubsection{Mappings Based on Task Partitioning}
+\begin{itemize}
+  \item Idea
+  \begin{itemize}
+    \item partitioning a given task-dependency graph across processes
+  \end{itemize}
+  \item Hard Problem
+  \begin{itemize}
+    \item determining an optimal mapping for a general task-dependency graph is an NP-complete problem
+    \item excellent heuristics exist for structured graphs
+  \end{itemize}
+  \item Example
+  \begin{itemize}
+    \item task-dependency graph is a perfect binary tree (e.g. recursive decomposition of quick-sort on a hypercube)
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.5\linewidth]{images/mappingsTaskPartitioning}
+\end{center}
+
+\subsubsection{Mapping a Sparse Graph}
+\begin{itemize}
+  \item Sparse graph fo computing a sparse matrix-vector product and its mapping
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.6\linewidth]{images/mappingSparseGraph}
+\end{center}
+
+\subsection{Methods for Minimizing Interaction Overheads}
+\begin{itemize}
+  \item Maximize data locality
+  \begin{itemize}
+    \item where possible, reuse intermediate data
+    \item restructure computation so that data can be reused in smaller time windows
+  \end{itemize}
+  \item Minimize volume of data exchange
+  \begin{itemize}
+    \item there is a cost associated with each word that is communicated
+    \item for this reason, we must minimize the volume of data communicated
+  \end{itemize}
+  \item Minimize frequency of interactions
+  \begin{itemize}
+    \item there is a startup cost associated with each interaction
+    \item therefore, try to merge multiple interactions to one, where possible
+  \end{itemize}
+  \item Minimize contention and hot-spots
+  \begin{itemize}
+    \item use decentralized techniques, replicate data where necessary
+  \end{itemize}
+  \item Overlapping computations with interactions
+  \begin{itemize}
+    \item use non-blocking communications, multithreading, and pre-fetching to hide latencies
+  \end{itemize}
+\end{itemize}
