@@ -99,9 +99,9 @@
 \begin{itemize}
   \item Recall
   \begin{itemize}
-    \item \(W\) is the asymptotic number of operations associated with the best serial algorithm to solve the problem: \(W = \mathcal{O}(T_S)\)
+    \item \(W\) is the asymptotic number of operations associated with the best serial algorithm to solve the problem: \(W = \Theta(T_S)\)
     \item overhead \(T_O(W,p)\) is a function of both problem size \(W\) and the number of processing elements \(p\)
-    \item cost-optimal parallel systems have an efficiency of \(\mathcal{O}(1)\)
+    \item cost-optimal parallel systems have an efficiency of \(\Theta(1)\)
   \end{itemize}
   \item Definition
   \begin{itemize}
@@ -186,7 +186,7 @@
   \begin{itemize}
     \item \(W = K \cdot T_O(W,p)\) should be expressed as a function of \(p\): \(W = f(p)\)
     \item problem size for fixed efficiency coefficient \(K\): \(W = K p log(p)\)
-    \item isoefficiency function: \(f(p) = \mathcal{O}(p log(p))\)
+    \item isoefficiency function: \(f(p) = \Theta(p log(p))\)
   \end{itemize}
   \item Interpretation
   \begin{itemize}
@@ -211,7 +211,7 @@
       \frac{\sqrt[4]{W^4}}{\sqrt[4]{W^3}} = \sqrt[4]{W} = K p^{\frac{3}{4}}\\
       W = K^4p^3  
     \end{align*}
-    \(\rightarrow\) the larger of these two asymptotic rates (\(p^{3/2}\) and \(p^{3}\)) determines the isoefficiency: \(f(p) = \mathcal{O}(p^3)\) 
+    \(\rightarrow\) the larger of these two asymptotic rates (\(p^{3/2}\) and \(p^{3}\)) determines the isoefficiency: \(f(p) = \Theta(p^3)\) 
   \end{itemize}
 \end{itemize}
 
@@ -220,14 +220,14 @@
   \item Cost-Optimality
   \begin{itemize}
     \item parallel runtime \(T_P = \frac{W + T_O(W,p)}{p}\)
-    \item a parallel system is cost-optimal iff \(\text{Cost} = p \cdot T_P = \mathcal{O}(W)\)
+    \item a parallel system is cost-optimal iff \(\text{Cost} = p \cdot T_P = \Theta(W)\)
   \end{itemize}
   \item Lower Bound
   \begin{itemize}
     \item[\-]
     \begin{align*}
-      W + T_O(W,p) &= \mathcal{O}(W)\\
-      T_O(W,p) &= O(W)\\
+      W + T_O(W,p) &= \Theta(W)\\
+      T_O(W,p) &= \mathcal{O}(W)\\
       W &= \Omega(W_O(W,p))
     \end{align*}
     \item let \(f(p)\) be the isoefficiency function
@@ -250,9 +250,9 @@
   \item Lower Bound on Isoefficiency
   \begin{itemize}
     \item for a problem size \(W\) no more than \(W\) processors can be used cost-optimally
-    \item \(W\) must increase at least as fast as \(\mathcal{O}(p)\) to maintain fixed efficiency: \(f(p) = \Omega(p)\)
+    \item \(W\) must increase at least as fast as \(\Theta(p)\) to maintain fixed efficiency: \(f(p) = \Omega(p)\)
     \begin{align*}
-      p &= O(W)\\
+      p &= \mathcal{O}(W)\\
       W &= \Omega(p)\\
       W &= f(p) = \Omega(p)
     \end{align*}
@@ -276,8 +276,8 @@
   \end{itemize}
   \item Effect of \(C(W)\) on Isoefficiency
   \begin{itemize}
-    \item isoefficiency due to concurrency is optimal only if \(C(W) = \mathcal{O}(W)\)
-    \item if \(C(W) < \mathcal{O}(W)\) then the isoefficiency due to concurrency is worse than \(\mathcal{O}(p)\)\\
+    \item isoefficiency due to concurrency is optimal only if \(C(W) = \Theta(W)\)
+    \item if \(C(W) < \Theta(W)\) then the isoefficiency due to concurrency is worse than \(\Theta(p)\)\\
     \(\rightarrow\) the overall isoefficiency function is given by the maximum of the isoefficiency functions due to concurrency, communication, and other overheads
   \end{itemize}
 \end{itemize}
@@ -286,22 +286,22 @@
 \begin{itemize}
   \item Problem
   \begin{itemize}
-    \item solving a system of \(n\) equations in \(n\) variables by using Gaussian elimination \(W = \mathcal{n^3}\)
+    \item solving a system of \(n\) equations in \(n\) variables by using Gaussian elimination \(W = \Theta(n^3)\)
   \end{itemize}
   \item Approach
   \begin{itemize}
-    \item the \(n\) variables must be eliminated sequentially, one after the other, and eliminating each variable requires \(\mathcal{O}(n^2)\) computations\\
-    \(\rightarrow\) at most \(\mathcal{O}(n^2)\) processing elements can be kept busy at any time\\
-    \(\rightarrow\) \(p = O(W^{2/3})\)
+    \item the \(n\) variables must be eliminated sequentially, one after the other, and eliminating each variable requires \(\Theta(n^2)\) computations\\
+    \(\rightarrow\) at most \(\Theta(n^2)\) processing elements can be kept busy at any time\\
+    \(\rightarrow\) \(p = \mathcal{O}(W^{2/3})\)
   \end{itemize}
   \item Degree of Concurrency
   \begin{itemize}
-    \item \(C(W) = O(W^{2/3}) < \mathcal{O}(W)\)
+    \item \(C(W) = \mathcal{O}(W^{2/3}) < \Theta(W)\)
   \end{itemize}
   \item Minimum Problem Size
   \begin{itemize}
     \item given \(p\) processing elements, the problem size \(W\) should be at least \(\Omega(p^{3/2})\) to use them all: \(W = \Omega(p^{3/2})\)\\
-    \item[\-] \(p = O(C(W)) = O(W^{3/2}) \rightarrow p^{3/2} = O(W) \rightarrow \Omega(p^{3/2}) = W\)
+    \item[\-] \(p = \mathcal{O}(C(W)) = \mathcal{O}(W^{3/2}) \rightarrow p^{3/2} = \mathcal{O}(W) \rightarrow \Omega(p^{3/2}) = W\)
   \end{itemize}
 \end{itemize}
 
@@ -310,7 +310,8 @@
 \begin{itemize}
   \item Minimum Execution Time \(T_p^{min}\)
   \begin{itemize}
-    \item \(\frac{d}{dp}T_p = 0\), let \(p_0\) be the value of \(p\) as determined by this equation \(T_p^{\text{min}} \begin{cases}
+    \item \(\frac{d}{dp}T_p = 0\), let \(p_0\) be the value of \(p\) as determined by this equation:\\
+    \(T_p^{\text{min}} \begin{cases}
       T_p(p_0) = \frac{W + T_O(W,p_0)}{p_0}, & \text{if } p_0 \leq C(W)\\
       T_p(C(W)) = \frac{W + T_O(W,C(W))}{C(W)}, & \text{else}
     \end{cases}\)
@@ -318,8 +319,8 @@
   \item Minimum Cost-Optimal Execution Time \(T_p^{\text{cost\_opt}}\)
   \begin{itemize}
     \item if the isoefficiency function of a parallel system is \(f(p)\), then a problem of size \(W\) can be solved cost-optimally iff \(W = \Omega(f(p))\)
-    \item if \(W = \Omega(f(p))\), then \(f(p) = O(W)\), then \(p = O(f^{-1}(W))\)
-    \item for cost-optimal systems the overhead is \(O(1)\): \(T_P = \mathcal{O}(W/p)\)\\
+    \item if \(W = \Omega(f(p))\), then \(f(p) = \mathcal{O}(W)\), then \(p = \mathcal{O}(f^{-1}(W))\)
+    \item for cost-optimal systems the overhead is \(\mathcal{O}(1)\): \(T_P = \Theta(W/p)\)\\
     \(T_P^{\text{cost\_opt}} = \Omega(\frac{W}{f^{-1}(W)})\)
   \end{itemize}
 \end{itemize}
@@ -348,10 +349,10 @@
     \item Isoefficiency \(f(p) = p log(p)\)
     \item[\-] \(p = f^{-1}(W) = n/(K log(p)) \qquad \qquad f^{-1}\) has to be a function of \(W\) not \(p\)
     \item Approximation of \(log(p)\): \(log(n) = log(K) + log(p) + log(log(p)) \approx log(p)\)
-    \item[\-] \(p = f^{-1}(W) = n/(K log(p)) \approx \mathcal{O}(n/log(n))\)  
+    \item[\-] \(p = f^{-1}(W) = n/(K log(p)) \approx \Theta(n/log(n))\)  
   \end{itemize}
   \item Maximum number of processing elements to solve the problem cost-optimally
-  \item[\-] \(p^{\text{cost\_opt}} \approx \mathcal{O}(n/log(n))\)
+  \item[\-] \(p^{\text{cost\_opt}} \approx \Theta(n/log(n))\)
   \item Minimum Cost-Optimal Execution Time
   \item[\-] \begin{align*}
     T_p^{\text{cost\_opt}} = T_{p^{\text{cost\_opt}}} = \frac{n}{p^{\text{cost\_opt}}} + log(p^{\text{cost\_opt}})\\
@@ -374,4 +375,9 @@
     \(p T_P\) & \(n^2\) & \(n log(n)\) & \(n^{1.5}\) & \(n log(n)\)\\
     \hline
   \end{tabularx}
+  \item The answer depends on your optimization criterion or criteria:
+  \begin{itemize}
+    \item If your main object is speed, then probably choose A1, because it has constant processing time, which is favorable if instance sizes \(n\) are large. However, constant time does not mean small, so it could be possible that for very small \(n\) A3 or A4 or even A2 could be faster.
+    \item For the full speed of A1 you need \(n^2\) processing elements. This might be a huge number and there are good reasons that your parallel system doesn't offer that much processing elements. In such a case it would be advisable to choose an algorithm which makes use of a reasonable number of processing elements and with a good efficiency, e.g. A2 and A4. If \(\sqrt{n}\) is not already too much for the number of processing elements, then A4 is the better choice than A2, because of the smaller runtime.
+  \end{itemize}
 \end{itemize}

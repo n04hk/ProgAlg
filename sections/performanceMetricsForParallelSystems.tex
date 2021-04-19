@@ -95,6 +95,13 @@
     \item Speedup per processor = Efficiency \(E = \frac{S}{p} = \frac{T_S}{p T_P}\)
 \end{itemize}
 
+\subsubsection{Big O Notation}
+\begin{itemize}
+    \item \(T(n) = \mathcal{O}(f(n))\) or \(T(n) \in \mathcal{O}(f(n))\) means that \(f(n)\) is an upper bound for \(T(n)\) when \(n\) tends to infinity.
+    \item \(T(n) = \Omega(f(n))\) or \(T(n) \in \Omega(f(n))\) means that \(f(n)\) is a lower bound for \(T(n)\) when \(n\) tends to infinity.
+    \item \(T(n) = \Theta(f(n))\) or \(T(n) \in \Omega(f(n))\) means that \(f(n)\) is a lower and an upper bound for \(T(n)\) when \(n\) tends to infinity. \(T(n)\) has the same complexity as \(f(n)\).
+\end{itemize}
+
 \subsubsection{Speedup Example}
 \begin{itemize}
     \item Problem: adding \(n\) numbers by using \(p = n\) processing elements
@@ -104,18 +111,18 @@
     \end{itemize}
     \item Sequential Algorithm
     \begin{itemize}
-        \item best algorithm has to read the entire input: \(T_S = \mathcal{O}(n)\)
+        \item best algorithm has to read the entire input: \(T_S = \Theta(n)\)
     \end{itemize}
     \item Parallel Algorithm
     \begin{itemize}
         \item we can perform this operation in \(\mathcal{O}(log(n))\) steps by propagating partial sums up a logical binary tree of processors
         \item the addition and the communication of a single word can be performed in constant time
-        \item \(T_P = \mathcal{O}(log(n))\)
+        \item \(T_P = \Theta(log(n))\)
     \end{itemize}
     \item Speedup and Efficiency
     \begin{itemize}
-        \item \(S = \mathcal{O}(\frac{n}{log(n)})\)
-        \item \(E = \frac{S}{p} = \frac{S}{n} = \mathcal{O}(\frac{1}{log(n)})\)
+        \item \(S = \Theta(\frac{n}{log(n)})\)
+        \item \(E = \frac{S}{p} = \frac{S}{n} = \Theta(\frac{1}{log(n)})\)
     \end{itemize}
 \end{itemize}
 
@@ -180,8 +187,8 @@
     \begin{itemize}
         \item \(T_P = log(n)\)
         \item \(\text{Cost} = p \cdot T_P = n log(n)\)
-        \item \(E = \frac{T_S}{\text{Cost}} = \frac{\mathcal{O}(n)}{\mathcal{O}(n log(n))} = \mathcal{O}(\frac{1}{log(n)}) \neq \mathcal{O}(1)\)
-        \item since the serial runtime of this operation is \(\mathcal{O}(n)\), the algorithm is \textbf{not cost-optimal}
+        \item \(E = \frac{T_S}{\text{Cost}} = \frac{\Theta(n)}{\Theta(n log(n))} = \Theta(\frac{1}{log(n)}) \neq \mathcal{O}(1)\)
+        \item since the serial runtime of this operation is \(\Theta(n)\), the algorithm is \textbf{not cost-optimal}
     \end{itemize}
 \end{itemize}
 
@@ -241,8 +248,8 @@
         \item each of the \(p\) processors is now assigned \(\mathbf{n/p}\) virtual processors
         \item the first \(log(p)\) of the \(log(n)\) steps of the original algorithm are simulated in \(\mathbf{(n/p) log(p)}\) steps on \(p\) processing elements
         \item subsequent \((log(n)-log(p))\) steps of the original algorithm do not require any communication and are processed in \(\mathbf{(n/p)}\) steps
-        \item[\-] \(\rightarrow T_P = \mathcal{O}(\frac{n}{p} log(p)) + \mathcal{O}(\frac{n}{p}) = \mathcal{O}(\frac{n}{p} log(p)) \)
-        \item[\-] \(\rightarrow \text{Cost} = \mathcal{O}(n log(p))\), it is not cost-optimal by a factor of \(log(p)\)\\
+        \item[\-] \(\rightarrow T_P = \Theta(\frac{n}{p} log(p)) + \Theta(\frac{n}{p}) = \Theta(\frac{n}{p} log(p)) \)
+        \item[\-] \(\rightarrow \text{Cost} = \Theta(n log(p))\), it is not cost-optimal by a factor of \(log(p)\)\\
         \begin{minipage}{0.5\linewidth}
             \includegraphics[width=\linewidth]{images/additionExample1}
         \end{minipage}%
@@ -259,13 +266,13 @@
     \end{itemize}
     \item Cost-optimal Approach
     \begin{itemize}
-        \item each processing element locally adds its \(n/p\) numbers in time \(\mathcal{O}(n/p)\)
+        \item each processing element locally adds its \(n/p\) numbers in time \(\Theta(n/p)\)
         \item the \(p\) partial sums on \(p\) processing elements can be added in time \(log(p)\)
-        \item[\-] \(\rightarrow T_P = \mathcal{O}(\frac{n}{p} + log(p))\)
-        \item[\-] \(\rightarrow \text{Cost} = \mathcal{O}(n + p log(p))\)
+        \item[\-] \(\rightarrow T_P = \Theta(\frac{n}{p} + log(p))\)
+        \item[\-] \(\rightarrow \text{Cost} = \Theta(n + p log(p))\)
         \item[\-] \(S = \frac{n}{\frac{n}{p} + log(p)}\)
         \item[\-] \(E = \frac{1}{1 + p \frac{log(p)}{n}}\)
-        \item this is cost-optimal, if \(p log(p) = \mathcal{O}(n)\) or if \(n = \mathcal{O}(p log(p))\)    
+        \item this is cost-optimal, if \(p log(p) = \mathcal{O}(n)\) or if \(n = \Omega(p log(p))\)    
         \begin{multicols}{2}
             \includegraphics[width=\linewidth]{images/additionExample5}
             \vfill\null
