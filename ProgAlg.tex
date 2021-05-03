@@ -17,6 +17,7 @@
 \include{header}
 \setitemize{noitemsep,topsep=0pt,parsep=0pt,partopsep=0pt}
 \usepackage{listings}
+\usepackage{ulem}
 %\lstset{
 %   breaklines=true,
 %   language=C++,
@@ -53,7 +54,8 @@
 \lstset{
    style=VS2017,
    breaklines=true,
-   language=C++
+   language=C++,
+	 escapeinside={\%*}{*)}
 }
 \usepackage{tabularx}
 \usepackage{float}
@@ -75,5 +77,8 @@
 \include{sections/performanceMetricsForParallelSystems}
 \include{sections/heterogeneousSharedMemorySystems}
 \include{sections/scalability}
+\include{sections/decompositionAndMapping}
+\include{sections/distributedMemorySystems.tex}
+
 
 \end{document}

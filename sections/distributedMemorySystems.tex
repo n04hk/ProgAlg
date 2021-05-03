@@ -1,0 +1,913 @@
+%!TEX root = ../ProgAlg.tex
+\section{Distributed Memory Systems and Message Passing Interface (MPI)}
+
+\subsection{Shared- vs. Distributed Memory Systems}
+\begin{itemize}
+  \item Why aren't all MIMD systems shared-memory systems?
+  \begin{itemize}
+    \item the cost of scaling the interconnect is very high
+    \item large crossbar switches are very expensive
+    \item distributed-memory interconnects such as the hypercube and the toroidal mesh are relatively inexpensive
+    \item coarse-grained computations usually don't need a lot of shared memory
+    \item distributed-memory systems are often better suited for problems requiring vast amounts of data or computation
+  \end{itemize}
+  \item Threads vs. Processes
+  \begin{itemize}
+    \item shared-memory system: tasks are carried out by threads
+    \begin{itemize}
+      \item each thread has private memory and access to shared-memory
+    \end{itemize}
+    \item distributed-memory system: tasks are carried out by processes
+    \begin{itemize}
+      \item processes have their own address space and can communicate to each other by different concepts: \textbf{message passing}, pipes, remotely shared-memory, ...
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\subsection{Motivation: Map-Reduce}
+\begin{center}
+  \includegraphics[width=0.35\linewidth]{images/mapReduce}
+\end{center}
+\begin{itemize}
+  \item MapReduce Programming Model
+  \begin{itemize}
+    \item introduced by Google in 2004 to support distributed computing on large data sets (several peta bytes) on clusters of computers
+    \item is inspired by the map and reduce functions commonly used in functional programming, although their purpose in the MapReduce programming model is not the same as their original forms
+    \item unlike in MPI programming, the details of the underlying parallelization and fault-tolerance are hidden from the programmer
+    \item has been adopted by many software frameworks written in C++, C\#, F\#, Erlang, Java, Python, and many other programming languages
+    \item \href{http://hadoop.apache.org/}{Hadoop by Apache} is a well-known open-source implementation of the MapReduce programming model
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{MapReduce: Principle and Example}
+\begin{minipage}{0.7\linewidth}
+\begin{itemize}
+  \item map
+  \begin{itemize}
+    \item a functional that executes a supplied function on all items of an input list in parallel
+    \item returns for each item a map \lstinline{<key,value>}
+    \item groups all return values by the keys
+  \end{itemize}
+  \item reduce
+  \begin{itemize}
+    \item takes a key and all values associated with that key and computes a reduction result of all associated values
+    \item reduction can be computed in parallel for all keys
+  \end{itemize}
+  \item Example
+  \begin{itemize}
+    \item compute the number of words for all available word lengths
+    \item input: ''this is a text about high performance computing''
+  \end{itemize}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.3\linewidth}
+  \begin{tabularx}{\linewidth}{|l|X|}
+    \hline
+    \textbf{Key} & \textbf{Grouped Values}\\
+    \hline
+    1 & a\\
+    2 & is\\
+    4 & this, text, high\\
+    9 & computing\\
+    11 & performance\\
+    \hline
+    \hline
+    \textbf{Key} & \textbf{Reduced Values}\\
+    \hline
+    1 & 1\\
+    2 & 1\\
+    4 & 3\\
+    9 & 1\\
+    11 & 1\\
+    \hline
+  \end{tabularx}
+\end{minipage}
+
+\subsection{Message Passing Interface (MPI)}
+\begin{itemize}
+  \item What is MPI?
+  \begin{itemize}
+    \item a standardized and portable message-passing system designed by a group of researchers from academia and industry to function on a wide variety of parallel computing architectures
+    \item the standard defines the syntax and semantics of a core of library routines in C and Fortran (C++ bindings are rarely used, are depracated since version 3)
+    \item version 1.0 was released in 1994
+    \item bindings for many other languages, including Python and Java are available
+  \end{itemize}
+  \item MPI Forum
+  \begin{itemize}
+    \item \href{https://www.mpi-forum.org/}{standardization forum for MPI}
+    \item \href{https://www.mpi-forum.org/bofs/2018-11-sc/intro.pdf}{status of MPI-3.1 implementations}, \href{mpi-forum.org/docs/mpi-3.1/mpi31-report.pdf}{Standard Version 3.1}
+  \end{itemize}
+  \item Implementations of MPI
+  \begin{itemize}
+    \item \href{www.mpich.org}{MPICH}: probably the most widely used implementation of MPI
+    \item \href{https://www.open-mpi.org/}{Open MPI}: open-source high performance computing
+    \item \href{https://software.intel.com/content/www/us/en/develop/tools/oneapi/components/mpi-library.html}{Intel MPI}
+    \item \href{https://docs.microsoft.com/en-us/message-passing-interface/microsoft-mpi?redirectedfrom=MSDN}{Microsoft MPI}: based on MPICH for Windows platforms
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Principles of MPI Programming}
+\begin{itemize}
+  \item Logical View
+  \begin{itemize}
+    \item a machine consists of \(p\) processes, each with its own exclusive address space
+    \item each data element must belong to one of the partitions of the address space \(\rightarrow\) data must be explicitly partitioned and placed
+    \item all interactions (read-only or read/write) require cooperation of two processes
+  \end{itemize}
+\end{itemize}
+\begin{minipage}{0.8\linewidth}
+\begin{itemize}
+  \item Implications
+  \begin{itemize}
+    \item communication costs are obvious and significant and must be considered by programmers
+  \end{itemize}
+  \item Structure of MPI Programs
+  \begin{itemize}
+    \item asynchronous paradigm
+    \begin{itemize}
+      \item all concurrent tasks execute asynchronously
+    \end{itemize}
+    \item loosely synchronous model
+    \begin{itemize}
+      \item tasks or subsets of tasks synchronize to perform interactions
+      \item between these interactions, tasks execute completely asynchronously
+    \end{itemize}
+    \item SPMD model
+    \begin{itemize}
+      \item most message-passing programs are written using the \textit{Single Program Multiple Data} model
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.2\linewidth}
+  \begin{center}
+    \includegraphics[width=\linewidth]{images/principlesMPI}
+  \end{center}
+\end{minipage}
+
+\subsubsection{Simple Example: Greetings!}
+\begin{tabular}{|l|}
+  \hline
+  Executing the program in VC++\\
+  Command: \$(MSMPI\_BIN)mpiexec.exe\\
+  Arguments: -n 10 ''\$(TargetPath)''\\
+  \hline
+\end{tabular}
+
+\lstinputlisting{listings/mpi.cpp}
+
+\subsubsection{Dealing with I/O}
+\begin{itemize}
+  \item Output
+  \begin{itemize}
+    \item MPI implementations usually allow all the processes in \lstinline{MPI_COMM_WORLD} full access to \lstinline{stdout} and \lstinline{stderr}
+    \item MPI implementations usually don't provide any automatic scheduling of access to \lstinline{stdout} and \lstinline{stderr}
+    \begin{itemize}
+      \item[\-] \(\rightarrow\) the order in which the process' output appears will be unpredictable
+      \item[\-] \(\rightarrow\) often only \(P_0\) writes to \lstinline{stdout}, and other processes send their output to \(P_0\)
+    \end{itemize}
+  \end{itemize}
+  \item Input
+  \begin{itemize}
+    \item MPI implementations usually only allow \(P_0\) in \lstinline{MPI_COMM_WORLD} access to \lstinline{stdin}
+    \item if input is needed by all processes, then \(P_0\) reads the input and broadcasts it
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{How to Debug MPI Programs?}
+\begin{itemize}
+  \item Error Detection Strategies
+  \begin{itemize}
+    \item run program with just one or only two processes
+    \item run all processes on a single computer
+    \item use assertions
+    \item use synchronous instead of buffered communication
+  \end{itemize}
+  \item Debugging
+  \begin{itemize}
+    \item mpiexec.exe starts several processes and each process runs the same MPI program
+    \item how to attach a debugger to one of these processes, let's say \(p\)
+    \begin{itemize}
+      \item use \lstinline{GetCurrentProcessId()} or \lstinline{getpid()} to determine the process ID of \(p\)
+      \item block process \(p\) by using \lstinline{stdin} or \lstinline{MPI_Recv} to attach the debugger
+      \item set your breakpoints and release process \(p\)
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Minimal Set of MPI Routines}
+\begin{center}
+  \begin{tabularx}{0.6\linewidth}{l X}
+    \hline
+    \lstinline{MPI_Init} & initializes MPI\\
+    \lstinline{MPI_Finalize} & terminates MPI\\
+    \lstinline{MPI_Comm_size} & determines the number of processes\\
+    \lstinline{MPI_Comm_rank} & determines the label of calling process\\
+    \lstinline{MPI_Send} & sends a message\\
+    \lstinline{MPI_Recv} & receives a message\\
+    \hline
+  \end{tabularx}
+\end{center}
+\begin{itemize}
+  \item \lstinline{MPI_Init}
+  \begin{itemize}
+    \item is called prior to any calls to other MPI routines
+    \item its purpose is to initialize the MPI environment
+    \item also strips off any MPI related command-line arguments
+  \end{itemize}
+  \item \lstinline{MPI_Finalize}
+  \begin{itemize}
+    \item is called at the end of the computation, and it performs various clean-up tasks to terminate the MPI environment
+  \end{itemize}
+  \item the return code for successful completion is \lstinline{MPI_SUCCESS}
+\end{itemize}
+
+\subsubsection{Send and Receive Operations}
+\begin{itemize}
+  \item The prototypes of these operations are as follows
+  \begin{itemize}
+    \item[\-] \lstinline{send(void *sendbuf, int nelems, int dest)}
+    \item[\-] \lstinline{receive(void *recvbuf, int nelems, int source)}  
+  \end{itemize}
+  \item Consider the following code segments
+  \begin{itemize}
+    \item[\-]
+    \begin{tabularx}{\linewidth}{l X}
+      \(P_0\) & \(P_1\)\\
+      \lstinline{int x = 100;} & \lstinline{int y;}\\
+      \lstinline{send(&x, 1, 1);} & \lstinline{receive(&y, 1, 0);}\\
+      \lstinline{x = 0;} & \lstinline{cout << y << endl;}\\
+    \end{tabularx}
+  \end{itemize}
+  \item Semantics
+  \begin{itemize}
+    \item the semantics of the send operation require that the value of \lstinline{x} at the time of the send operation must be the value that is received by process \(P_1\) (the received value must be 100, not 0)
+  \end{itemize}
+  \item this motivates the design of different send and receive protocols
+\end{itemize}
+
+\subsubsection{Blocking Message Passing Operations}
+\begin{itemize}
+  \item Non-Buffered
+  \begin{itemize}
+    \item a simple method for forcing send/receive semantics is for the send operation to return only when it is safe to do so
+    \item in the non-buffered blocking send, the operation does not return until the matching receive has been encountered at the receiving process
+    \item idling and deadlocks are major issues with non-buffered blocking sends
+    \item[\-] \begin{center}\includegraphics[width=0.6\linewidth]{images/blockingMPI}\end{center}
+  \end{itemize}
+  \item Buffered
+  \begin{itemize}
+    \item a simple solution to the idling and deadlocking problem outlined before is to rely on buffers at the sending and receiving ends
+    \item the sender copies the data into the designated buffer and returns after copying has been completed; the data must be buffered at the receiving end as well
+    \item buffering trades off idling overhead for buffer copying overhead
+    \item[\-] \begin{center}\includegraphics[width=0.6\linewidth]{images/bufferedMPI}\end{center}
+  \end{itemize}
+  \item Basic Functions for Sending and Receiving Messages in MPI
+  \begin{itemize}
+    \item[\-] \lstinline{int MPI_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag, MPI_Comm comm)}
+    \item[\-] \lstinline{int MPI_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag, MPI_Comm comm, MPI_Status *status)} 
+  \end{itemize}
+  \item \lstinline{MPI_Datatype}
+  \begin{itemize}
+    \item MPI provides equivalent datatypes for all \href{https://docs.microsoft.com/en-us/message-passing-interface/mpi-datatype-enumeration?redirectedfrom=MSDN}{C datatypes}
+    \item e.g., \lstinline{MPI_Byte} corresponds to a byte (8 bits) and \lstinline{MPI_PACKED}f corresponds to a collection of data items that has been created by packing non-contiguous data
+  \end{itemize}
+  \item Destination and Source
+  \begin{itemize}
+    \item destination and source processes are uniquely defined by process ID (= rank) and communicator (process subset)
+    \item source wildcard in \lstinline{MPI_Recv}: \lstinline{MPI_ANY_SOURCE}
+    \item no destination in \lstinline{MPI_Send}: \lstinline{MPI_PROC_NULL}
+  \end{itemize}
+  \item Tag
+  \begin{itemize}
+    \item user defined message-tag to distinguish different types of messages
+    \item tag wildcard: \lstinline{MPI_ANY_TAG}
+  \end{itemize}
+  \item Non-Buffered vs. Buffered
+  \begin{itemize}
+    \item exact behavior of \lstinline{MPI_Send} is determined by the implementation
+    \item the sending process waits until
+    \begin{itemize}
+      \item the receiving process has received the message (non-buffered)
+      \item the message has been copied to an internal buffer (buffered)
+    \end{itemize}
+    \item the sending process
+    \begin{itemize}
+      \item doesn't know whether the message has been transmitted
+      \item can reuse the external send buffer after \lstinline{MPI_Send} returned
+    \end{itemize}
+    \item \lstinline{MPI_Recv} blocks in any case until a matching message has been received
+    \begin{itemize}
+      \item sender and receiver use the same communicator
+      \item sender and receiver use the same tag, or the receiver uses \lstinline{MPI_ANY_TAG}
+      \item sender's rank is equal to receiver's source, or the receiver uses \lstinline{MPI_ANY_SOURCE}
+      \item sender and receiver specify compatible external buffers
+    \end{itemize}
+    \item messages are non-overtaking
+    \begin{itemize}
+      \item two messages sent by the same sender to the same receiver must be available for the reader in the order of sending
+      \item messages sent by different processes can be received in any order
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Safety and Deadlocks}
+\begin{itemize}
+  \item Safe Programs
+  \begin{itemize}
+    \item MPI programs must be able to run correctly regardless of which of the two implementations (buffered or non-buffered) of \lstinline{MPI_Send} is used
+  \end{itemize}
+  \item Is this program safe?
+  \begin{itemize}
+    \item[\-]
+\begin{lstlisting}
+int a[10], b[10], id;
+MPI_Status status;
+// ...
+MPI_Comm_rank(MPI_COMM_WORLD, &id);
+if (id == 0) {
+  const int dest = 1;
+  MPI_Send(a, 10, MPI_INT, dest, 1, MPI_COMM_WORLD);
+  MPI_Send(b, 10, MPI_INT, dest, 2, MPI_COMM_WORLD);
+} else if (id == 1) {
+  const int source = 0;
+  MPI_Recv(b, 10, MPI_INT, source, 2, MPI_COMM_WORLD, &status);
+  MPI_Recv(a, 10, MPI_INT, source, 1, MPI_COMM_WORLD, &status);
+}
+// ...
+\end{lstlisting}
+  \end{itemize}
+  \item How can we check if a program is safe?
+  \begin{itemize}
+    \item we can use an alternative to \lstinline{MPI_Send}: \lstinline{MPI_Ssend}
+    \item synchronous sending is guaranteed to block until the matching receive starts
+  \end{itemize}
+  \item Deadlock!
+  \begin{itemize}
+    \item[\-]
+\begin{lstlisting}
+int a[10], b[10], id;
+MPI_Status status;
+// ...
+MPI_Comm_rank(MPI_COMM_WORLD, &id);
+if (id == 0) {
+  const int dest = 1;
+  %*\color{red}{MPI\_Ssend}*)(a, 10, MPI_INT, dest, 1, MPI_COMM_WORLD);
+  %*\color{red}{MPI\_Ssend}*)(b, 10, MPI_INT, dest, 2, MPI_COMM_WORLD);
+} else if (id == 1) {
+  const int source = 0;
+  MPI_Recv(b, 10, MPI_INT, source, 2, MPI_COMM_WORLD, &status);
+  MPI_Recv(a, 10, MPI_INT, source, 1, MPI_COMM_WORLD, &status);
+}
+// ...
+\end{lstlisting} 
+  \end{itemize}
+  \item Buffered
+  \begin{itemize}
+    \item sending and receiving messages simultaneously
+\begin{lstlisting}
+int MPI_Sendrecv(void *sendbuf, int sendcount,
+    MPI_Datatype senddatatype, int dest, int sendtag, void *recvbuf,
+    int recvcount, MPI_Datatype recvdatatype, int source, int recvtag,
+    MPI_Comm comm, MPI_Status *status)
+\end{lstlisting}
+  \item or with same buffer for both sending and receiving
+\begin{lstlisting}
+int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
+    int dest, int sendtag, int source, int recvtag, MPI_Comm comm,
+    MPI_Status *status)
+\end{lstlisting}
+  \end{itemize}
+  \item MPI Solution
+\end{itemize}
+
+\subsubsection{Non-Blocking Message Passing}
+\begin{itemize}
+  \item Non-Buffered
+  \begin{itemize}
+    \item \textbf{the programmer must ensure semantics of the send and receive}
+    \item this class of non-blocking protocols returns from the send and receive operation before it is semantically safe to do so
+    \item non-blocking operations are generally accompanied by a ckeck-status operation
+    \item when used correctly, these primitives are capable of overlapping communication overheads with useful computations
+  \end{itemize}
+  \item[\-] \begin{center}\includegraphics[width=0.6\linewidth]{images/nonBlockingMPI}\end{center}
+  \item Overlapping Communication with Computation
+  \begin{itemize}
+    \item non-blocking send and receive operations
+\begin{lstlisting}
+int MPI_Isend(void *buf, int count, MPI_Datatype datatype,
+              int dest, int tag, MPI_Comm comm, MPI_Request *request)
+int MPI_Irecv(void *buf, int count, MPI_Datatype datatype,
+              int source, int tag, MPI_Comm comm, MPI_Request *request)
+\end{lstlisting}
+    \item these operations return before the operations have been completeed
+    \item cannot reuse the external buffer until the operations has been completed 
+  \end{itemize}
+  \item \lstinline{MPI_Test}
+  \begin{itemize}
+    \item tests whether the non-blocking send or receive operation identified by its request has finished
+    \item[\-] \lstinline{int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)}
+  \end{itemize}
+  \item \lstinline{MPI_Wait}
+  \begin{itemize}
+    \item waits for the operation to complete
+    \item[\-] \lstinline{int MPI_Wait(MPI_Request *request, MPI_Status *status)}
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Communication Status}
+\begin{itemize}
+  \item Receiver
+  \begin{itemize}
+    \item on the receiving end, the \textbf{status} variable can be used to get information about the \lstinline{MPI_Recv} operation
+    \item some information can be accessed directly (source, tag, error), while other information can be read with specific \lstinline{MPI_Get_xyz} functions
+  \end{itemize}
+  \item Data Structure
+  \begin{itemize}
+    \item[\-]
+\begin{lstlisting}
+struct MPI_Status {
+  int MPI_SOURCE;
+  int MPI_TAG;
+  int MPI_ERROR;
+};
+\end{lstlisting} 
+  \end{itemize}
+  \item \lstinline{MPI_Get_count}
+  \begin{itemize}
+    \item returns the precise count of data items received
+\begin{lstlisting}
+int MPI_Get_count(MPI_Status *status,     /* in  */
+                  MPI_Datatype datatype,  /* in  */
+                  int *count)             /* out */
+\end{lstlisting}
+  \end{itemize}
+\end{itemize}
+
+\subsection{Odd-Even-Sort}
+\begin{lstlisting}
+procedure ODD-Even_PAR(p)
+begin
+  id := process label
+  sort partition id
+  for i := 1 to p do begin
+    if i is odd then
+      if id is odd then
+        compare-split_min(id + 1)
+      else
+        compare-split_max(id - 1)
+    else
+      if id is even then
+        compare-split_min(id + 1)
+      else
+        compare-split_max(id - 1)
+  end for
+end ODD-EVEN_PAR
+\end{lstlisting}
+
+\begin{tabularx}{\linewidth}{|l|X|X|X|X|}
+  \hline
+    \multicolumn{5}{c}{Process}\\
+    \textbf{Time} & 0 & 1 & 2 & 3\\
+    \hline
+    Start & 15,11,9,16 & 3,14,8,7 & 4,6,12,10 & 5,2,13,1\\
+    \hline
+    After Local Sort & \cellcolor{blue!15}9,11,15,16 & \cellcolor{blue!15}3,7,8,14 & \cellcolor{green!15}4,6,10,12 & \cellcolor{green!15}1,2,5,13\\
+    \hline
+    After Phase 0 & 3,7,8,9 & \cellcolor{blue!15}11,14,15,16 & \cellcolor{blue!15}1,2,4,5 & 6,10,12,13\\
+    \hline
+    After Phase 1 & \cellcolor{blue!15}3,7,8,9 & \cellcolor{blue!15}1,2,4,5 & \cellcolor{green!15}11,14,15,16 & \cellcolor{green!15}6,10,12,13\\
+    \hline
+    After Phase 2 & 1,2,3,4 & \cellcolor{blue!15}5,7,8,9 & \cellcolor{blue!15}6,10,11,12 & 13,14,15,16\\
+    \hline
+    AFter Phase 3 & 1,2,3,4 & 5,6,7,8 & 9,10,11,12 & 13,14,15,16\\
+  \hline
+\end{tabularx}
+
+\subsubsection{Odd-Even Sort: MPI Example}
+\begin{lstlisting}
+int main(int argc, char* argv[])
+{
+  const int n = 1000000;
+
+  int p, id, oddid, evenid;
+  MPI_Status status;
+
+  MPI_Init(&argc, &argv);
+  MPI_Comm_size(MPI_COMM_WORLD, &p);
+  MPI_Comm_rank(MPI_COMM_WORLD, &id);
+
+  int nlocal = n/p;
+  assert(nlocal*p == n);
+  int *elements = new int[nlocal];
+  int *received = new int[nlocal];
+  int *temp     = new int[nlocal];
+
+  // fill in elements
+  srand(id);
+  for (int i = 0; i < nlocal; i++) {
+    elements[i] = rand();
+  }
+  // sort local elements
+  sort(elements, elements + nlocal);
+  // determine neighbor ids
+  if (id & 1) {
+    oddid = id + 1;
+    evenid = id - 1;
+  } else {
+    oddid = id - 1;
+    evenid = id + 1;
+  }
+
+  if (evenid < 0 || evenid == p) evenid = MPI_PROC_NULL;
+  if (oddid  < 0 || oddid  == p) oddid  = MPI_PROC_NULL;
+  // main loop of odd-even sort
+  for (int i = 0; i < p; i++) {
+    if (i & 1) {
+      // odd phase
+      MPI_Sendrecv(elements, nlocal, MPI_INT, oddid, 1, received, nlocal, MPI_INT,
+                   oddid, 1, MPI_COMM_WORLD, &status);
+    } else {
+      // even phase
+      MPI_Sendrecv(elements, nlocal, MPI_INT, evenid, 1, received, nlocal, MPI_INT,
+                   evenid, 1, MPI_COMM_WORLD, &status);
+    }
+    if (status.MPI_SOURCE != MPI_PROC_NULL) CompareSplit(nlocal, elements, received,
+        temp, id < status.MPI_SOURCE);
+  }
+  delete[] elements; delete[] received; delete[] temp;
+  MPI_Finalize();
+  return 0;
+}
+\end{lstlisting}
+
+\begin{lstlisting}
+void CompareSplit(int nlocal, int *elements, int *received, int *temp, bool keepSmall) {
+  memcpy(temp, elements, nlocal*sizeof(int));
+
+  if (keepSmall) {
+    for (int i = 0; j = 0; k = 0; k < nlocal; k++) {
+      if (j == nlocal || (i < nlocal && temp[i] <= received[j])) {
+        elements[k] = temp[i++];
+      } else {
+        elements[k] = received[j++];
+      }
+    }
+  } else {
+    const int last = nlocal - 1;
+    for (int i = last; j = last; k = last; k >= 0; k--) {
+      if (j == -1 || (i >= 0 && temp[i] >= received[j])) {
+        elements[k] = temp[i--];
+      } else {
+        elements[k] = received[j--];
+      }
+    }
+  }
+}
+\end{lstlisting}
+
+\begin{itemize}
+  \item How to check if the elements are sorted?
+  \begin{itemize}
+    \item each process checks the order of its own elements and
+    \item sends the first (smallest), the last (greatest) and the result of its own check to \(P_0\)
+    \item \(P_0\) checks additionally the global order
+  \end{itemize}
+  \item MPI Code
+  \begin{itemize}
+    \item[\-]
+\begin{lstlisting}
+int i = 1;
+while (i < nlocal && elements[i-1] <= elements[i]) i++;
+temp[0] = elements[0]; temp[1] = elements[nlocal - 1]; temp[2] = (i == nlocal);
+if (id == 0) {
+  bool isSorted = true; int last = elements[nlocal - 1];
+  for (int i = 1; i < p && isSorted; i++) {
+    MPI_Recv(temp, 3, MPI_INT, i, 0, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+    if (temp[0] < last || !temp[2]) isSorted = false;
+    last = temp[1];
+  }
+} else {
+  MPI_Send(temp, 3, MPI_INT, 0, 0, MPI_COMM_WORLD);
+}
+\end{lstlisting} 
+  \end{itemize}
+\end{itemize}
+
+\begin{center}
+  \includegraphics[width=0.6\linewidth]{images/oddEvenComparison}
+\end{center}
+
+\subsection{Communicators and Topologies}
+
+\subsubsection{Communicators}
+\begin{itemize}
+  \item Communication Domain
+  \begin{itemize}
+    \item a communicator defines a set of processes that are allowed to communicate with each other (intra-communication)
+    \item information about communication domains is stored in variables of type \lstinline{MPI_Comm}
+    \item a process can belong to many different (possibly overlapping) communication domains
+  \end{itemize}
+  \item Communicators
+  \begin{itemize}
+    \item are used as arguments to all message transfer MPI routines
+    \item MPI defines a default communicator called \lstinline{MPI_COMM_WORLD} which includes all the processes
+    \item support different logical topologies (linear array, Cartesian meshes, arbitrary graphs) of mappings
+    \item can be partitioned in subsets
+  \end{itemize}
+  \item Inter-Communication
+  \begin{itemize}
+    \item special communicators allow communication between two different communication domains (inter-communicaton)
+    \item \lstinline{MPI_Intercomm_create} creates an inter-communicator
+    \item \lstinline{MPI_Comm_remote_group} accesses the remote group associated with a given inter-communicator
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{2-Dimensional Grid Mapping}
+\begin{center}
+  \includegraphics[width=0.6\linewidth]{images/2dGridMapping}
+\end{center}
+\begin{itemize}
+  \item Different ways to map a set of processes to a two-dimensional grid
+  \begin{itemize}
+    \item (a) and (b) show a row- and column-wise mapping of these processes,
+    \item (c) shows a mapping that follows a space-filling curve (dotted line), and
+    \item (d) shows a mapping in which neighboring processes are directly connected in a hypercube
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Topologies and Embedding}
+\begin{itemize}
+  \item Processor Mappings
+  \begin{itemize}
+    \item the processor id's in \lstinline{MPI_COMM_WORLD} can be mapped to other communicators in many ways
+    \item the goodness of any such mapping is determined by the interaction pattern of the underlying program and the physical topology of the machine
+    \item the programmer cannot explicitly specify how processes are mapped onto the processors
+    \item[\-] \(\rightarrow\) it is up to the MPI library to find the most appropriate mapping that reduces the cost of sending and receiving messages
+  \end{itemize}
+  \item Supported Topologies
+  \begin{itemize}
+    \item MPI allows a programmer to organize processors into logical
+    \begin{itemize}
+      \item k-dimensinonal meshes: \lstinline{MPI_Cart_create}
+      \item arbitrary graphs: \sout{\lstinline{MPI_Graph_create}} (all processes specify all edges)
+      \item better version: \lstinline{MPI_Dist_graph_create} (any process can specify any edge)
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Partitioning Topologies}
+\begin{itemize}
+  \item Use Case
+  \begin{itemize}
+    \item communication operations often need to be restricted to certain subsets of processes
+  \end{itemize}
+  \item Approach
+  \begin{itemize}
+    \item MPI provides mechanisms for partitioning the group of processes that belong to a communicator into subgroups each corresponding to a different communicator
+    \item The simplest such mechanism is\\
+    \lstinline{int MPI_Comm_split(MPI_Comm comm, int col, int key, MPI_Comm *newComm)}
+    \item this operation groups processors by color and sorts resulting groups on the key
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.5\linewidth]{images/partitioningTopologies}
+\end{center}
+
+\subsubsection{Creating Cartesian Topologies}
+\begin{itemize}
+  \item Creating a Cartesian Topology\\
+\begin{lstlisting}
+int MPI_Cart_create(MPI_Comm commOld, int nDims,
+                    int *dims, int *periods, int reorder,
+                    MPI_Comm *commCart)
+\end{lstlisting}
+  \item this function takes the processes in the old communicator and creates a new communicator \textit{commCart} with \textit{nDims} dimensions
+  \begin{itemize}
+    \item \textit{dims} is an array of length \textit{nDims}: it specifies the size along each dimension of the topology
+    \item \textit{periods} is an array of length \textit{nDims}: if \textit{periods[i]} is true, then the topology has wraparound connections along dimension \textit{i}
+    \item \textit{reorder}: determines if the processes in the new group (i.e., communicator) are to be reordered or not
+    \begin{itemize}
+      \item false: the rank (id) of each process in the new group is identical to its rank in the old group
+      \item true: processes get a new rank if that leads to a better embedding of the virtual topology onto the parallel computer
+    \end{itemize}
+  \end{itemize}
+  \item all the processes that belong to the \textit{commOld} communicator must call this function
+\end{itemize}
+
+\subsubsection{Using Cartesian Topologies}
+\begin{itemize}
+  \item Coordinate Transformation
+  \begin{itemize}
+    \item each process in a Cartesian topology can be identified by a vector of dimension \textit{nDims}
+    \item since sending and receiving messages still require (one-dimensional) ranks, MPI provides routines to convert ranks to Cartesian coordinates\\
+    \lstinline{MPI_Cart_coord(MPI_Comm commCart, int rank, int nDims, int *coords)}
+    \item and vice-versa (coordinates to rank)\\
+    \lstinline{MPI_Cart_rank(MPI_Comm commCart, int *coords, int *rank)}
+  \end{itemize}
+  \item Shifting Data
+  \begin{itemize}
+    \item the most common data operation on Cartesian topologies is a shift
+    \item to determine the rank of source and destination of such shifts, MPI provides the following function\\
+\begin{lstlisting}
+MPI_Cart_shift(MPI_Comm commCart, int dir, int step,
+               int *rankSource, int *rankDest)
+\end{lstlisting}
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Subsets of Cartesian Topologies}
+\begin{itemize}
+  \item Use Case
+  \begin{itemize}
+    \item communication often needs to be restricted to a different subset of a grid
+  \end{itemize}
+  \item Approach
+  \begin{itemize}
+    \item MPI provides a convenient way to partition a Cartesian topology to form lower-dimensional grids
+    \begin{itemize}
+      \item \lstinline{int MPI_Cart_sub(MPI_Comm commCart, int *keep_dims, MPI_Comm *commSubcart)}
+    \end{itemize}
+    \item if \lstinline{keep_dims[i]} is true, then the i-th dimension is retained in the new sub-topology
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.6\linewidth]{images/subsetsCartesianTopologies}
+\end{center}
+
+\subsection{Collective Communication}
+\begin{minipage}{0.5\linewidth}
+\begin{itemize}
+  \item Collective Communication Operations
+  \begin{itemize}
+    \item MPI provides an extensive set of functions for performing common collective communication operations
+    \begin{itemize}
+      \item barrier synchronization
+      \item broadcasts: one-to-all, all-to-all
+      \item reduction: reduce, all-reduce
+      \item prefix-sum: scan, exscan
+      \item personalized communication: gather and scatter
+    \end{itemize}
+    \item each of these operations is defined over a group corresponding to the communicator
+    \item all processors in a communicator must call these operations
+  \end{itemize}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.5\linewidth}
+\begin{center}
+  \includegraphics[width=0.7\linewidth]{images/collectiveCommunication}
+\end{center}
+\end{minipage}
+
+\subsubsection{Collective Communication Operations (1)}
+\begin{itemize}
+  \item Barrier Synchronization
+  \begin{lstlisting}
+    MPI_Barrier(MPI_Comm comm)
+  \end{lstlisting}
+  \item One-to-all broadcast
+  \begin{itemize}
+    \item[\-]
+\begin{lstlisting}
+MPI_Bcast(void *buf, int count, MPI_Datatype datatype,
+    int source, MPI_comm comm)
+\end{lstlisting}
+  \end{itemize}
+  \item All-to-one Reduction
+  \begin{lstlisting}
+    MPI_Reduce(void *sendbuf, void *recvbuf, int count,
+        MPI_Datatype datatype, MPI_Op op, int target, MPI_Comm comm)
+  \end{lstlisting}
+  \item If the result of the reduction operation is needed by all processes
+  \begin{lstlisting}
+    MPI_Allreduce(void *sendbuf, void *recvbuf, int count,
+        MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
+  \end{lstlisting}
+  \item Partial Reduction used in Prefix-sum (inclusive)
+  \begin{lstlisting}
+    MPI_Scan(void *sendbuf, void *recvbuf, int count,
+        MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
+  \end{lstlisting}
+\end{itemize}
+
+\subsubsection{Predefined Reduciont Operations}
+\begin{tabularx}{\linewidth}{l l X}
+  \hline
+  Operation & Meaning & Datatypes\\
+  \hline
+  \lstinline{MPI_MAX} & Maximum & C integers and floating point\\
+  \lstinline{MPI_MIN} & Minimum & C integers and floating point\\
+  \lstinline{MPI_SUM} & Sum & C integers and floating point\\
+  \lstinline{MPI_PROD} & Product & C integers and floating point\\
+  \lstinline{MPI_LAND} & Logical AND & C integers\\
+  \lstinline{MPI_BAND} & Bit-wise AND & C integers and byte\\
+  \lstinline{MPI_LOR} & Logical OR & C integers\\
+  \lstinline{MPI_BOR} & Bit-wise OR & C integers and bytes\\
+  \lstinline{MPI_LXOR} & Logical XOR & C integers\\
+  \lstinline{MPI_BXOR} & Bit-wise XOR & C integers and byte\\
+  \lstinline{MPI_MAXLOC} & max-min value-location & Data-pairs\\
+  \lstinline{MPI_MINLOC} & min-min value-location & Data-pairs\\
+  \hline
+\end{tabularx}
+
+\subsubsection{Collective Communication Operations (2)}
+\begin{itemize}
+  \item Gather
+  \begin{lstlisting}
+    MPI_Gather(void *sendbuf, int sendcount, MPI_Datatype sendType,
+              void *recvbuf, int recvcount, MPI_Datatype recvType,
+              int target, MPI_Comm comm)
+  \end{lstlisting}
+  \item Scatter
+  \begin{lstlisting}
+    MPI_Scatter(void *sendbuf, int sendcount, MPI_Datatype sendType,
+                void *recvbuf, int recvcount, MPI_Datatype recvType, int source,
+                MPI_Comm comm)
+  \end{lstlisting}
+  \item AllGather function in which the data is gathered at all the processes
+  \begin{lstlisting}
+    MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendType,
+                void *recvbuf, int recvcount, MPI_Datatype recvdatatype,
+                MPI_Comm comm)
+  \end{lstlisting}
+  \item All-to-all personalized communication (Total Exchange)
+  \begin{lstlisting}
+    MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendType,
+                void *recvbuf, int recvcount, MPI_Datatype recvType,
+                MPI_Comm comm)
+  \end{lstlisting}
+\end{itemize}
+
+\subsection{MPI-2 (Released in 2000)}
+\begin{itemize}
+  \item MPI + Threads (Hybrid Programming)
+  \begin{itemize}
+    \item \lstinline{MPI_Init_thread} must be used instead of \lstinline{MPI_Init}
+    \item four levels of thread safet
+    \begin{itemize}
+      \item \lstinline{MPI_THREAD_SINGLE}: only one thread exists in the application
+      \item \lstinline{MPI_THREAD_FUNNELED}: multithreaded, but only the main thread makes MPI calls
+      \item \lstinline{MPI_THREAD_SERIALIZED}: multithreaded, but only one thread at a time makes MPI calls
+      \item \lstinline{MPI_THREAD_MULTIPLE}: multithreaded and any thread can make MPI calls at any time
+      \begin{itemize}
+        \item when multiple threads make MPI calls concurrently, the outcome will be as if the calls executed sequentially in some (any) order
+        \item blocking MPI calls will block only the calling thread and will not prevent other threads from running or executing MPI functions
+        \item it is the user's responsibility to prevent races when threads in the same application post conflicting MPI calls
+        \item user must ensure that collective operations on the same communicator, window, or file handle are correctly ordererd among threads
+      \end{itemize}
+    \end{itemize}
+  \end{itemize}
+  \item MPI I/O
+  \begin{itemize}
+    \item parallel access to files: \lstinline{MPI_File_open}, \lstinline{MPI_File_write}, \lstinline{MPI_File_read}, ...
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{MPI-2: Aliased Buffer}
+\begin{itemize}
+  \item Argument aliasing example
+\begin{lstlisting}
+void copyBuffer(int pin[], int pout[], int len) {
+  for(int i=0; i < len; i++) *pout++ = *pin++;
+}
+int a[10];
+copyBuffer(a, a + 3, 7);
+\end{lstlisting}
+  \item Argument aliasing is not allowed in MPI
+  \begin{itemize}
+    \item send buffer and receiver buffer must not be aliased
+  \end{itemize}
+  \item In-place communication in collective communication operations
+  \begin{itemize}
+    \item in many cases, collective communication can occur ''in place''
+    \item with the ouput buffer being identical to the input buffer
+    \item use \lstinline{MPI_IN_PLACE} instead of the send buffer of the receive buffer argument, depending on the operation performed
+  \end{itemize}
+\end{itemize}
+
+\subsection{MPI-3 (Released in 2012)}
+\begin{itemize}
+  \item C++ bindings are deprecated
+  \begin{itemize}
+    \item that's why we only use C interfaces
+  \end{itemize}
+  \item Non-blocking Collective Operations
+  \begin{itemize}
+    \item e.g., \lstinline{MPI_lbcase}, \lstinline{MPI_lallgather}, ...
+    \item are incompatible with blocking collective operations
+  \end{itemize}
+  \item One-sided Communication
+  \begin{itemize}
+    \item remote memory access (RMA):
+    \begin{itemize}
+      \item \lstinline{MPI_Win_create}
+      \item \lstinline{MPI_Win_allocate}
+      \item \lstinline{MPI_Put}
+      \item \lstinline{MPI_Get}
+    \end{itemize}
+    \item shared memory access: \lstinline{MPI_Win_allocate_shared}
+    \begin{itemize}
+      \item only for a group of processes on the same computer with shared memory
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
