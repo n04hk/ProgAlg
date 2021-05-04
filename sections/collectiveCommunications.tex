@@ -1,0 +1,616 @@
+%!TEX root = ../ProgAlg.tex
+\section{Collective Communication}
+
+\subsection{Introduction to Collective Communication}
+\begin{itemize}
+  \item Data Exchange
+  \begin{itemize}
+    \item designing parallel algorithms on a distributed-memory system requires data exchange between processes (nodes)
+    \item this exchange can significantly impact the efficiency because of interaction delays
+  \end{itemize}
+  \item Common Set of Operations
+  \begin{itemize}
+    \item many interactions in pracitcal parallel programs occur in well-defined patterns involving groups of nodes
+    \begin{itemize}
+      \item point-to-point communications between two nodes (with or without routing)
+      \item group (global) communications between more than two nodes
+    \end{itemize}
+    \item efficient implementations of these operations can
+    \begin{itemize}
+      \item improve performance
+      \item reduce development effort and cost
+      \item improve software quality
+    \end{itemize}
+    \item efficient implementations must leverage underlying architecture
+    \begin{itemize}
+      \item for this reason, we refer to specific architectures here
+    \end{itemize}
+  \end{itemize}
+  \item Selection of Simple Interconnection Networks
+  \begin{itemize}
+    \item selection of descriptive set of architectures to illustrate the process of algorithm design for distributed-memory systems
+    \begin{itemize}
+      \item linear array
+      \item two-dimensional mesh
+      \item hypercube
+    \end{itemize}
+  \end{itemize}
+  \item Assumptions
+  \begin{itemize}
+    \item collective communication operations are built using \textbf{point-to-point} messaging primitives with routing when needed
+    \item communicating a message of size \(m\) over an uncongested network takes time:\\
+    \(t_s + m \cdot t_w\) (simplified cost model ignores the number of hops)
+    \item the network is bidirectional and channels are FIFO
+    \item communication is single-ported (reading and writing on the same port at the same time is NOT possible)
+  \end{itemize}
+\end{itemize}
+
+\subsection{Communication Costs (Repetition)}
+%TODO: reference section
+
+\subsection{Overview of Global Communication}
+\begin{itemize}
+  \item Collective Communication
+  \begin{itemize}
+    \item Who is sending to whom?
+    \begin{itemize}
+      \item one node to all other nodes
+      \item all nodes to one
+      \item all nodes to all
+    \end{itemize}
+    \item What data is spread?
+    \begin{itemize}
+      \item the same data is sent to all nodes (broadcast)
+      \item personalized data is sent to different nodes
+    \end{itemize}
+    \item How is received data handled?
+    \begin{itemize}
+      \item glued together (\textbf{aggregated})
+      \item combined piece-wise (\textbf{reduced})
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \begin{tabularx}{\linewidth}{|l|l|l|l|l|}
+    \hline
+     & \multicolumn{2}{c}{\textbf{broadcast}} & \multicolumn{2}{c}{\textbf{personalized}}\\
+    \hline
+    \textbf{one-to-all} & \multicolumn{2}{c}{One-to-All Broadcast} & \multicolumn{2}{c}{Scatter}\\
+    \hline
+    \textbf{all-to-one} & & & Gather & All-to-One Reduction\\
+    \hline
+    \textbf{all-to-all} & All-to-All Broadcast & All-Reduce & Total Exchange & All-to-All Reduction\\
+    \hline
+  \end{tabularx}
+\end{center}
+
+
+\subsubsection{One-to-All Broadcast and All-to-One Reduction}
+\begin{itemize}
+  \item One-to-All Broadcast
+  \begin{itemize}
+    \item one node has a message M (of size \(m\)) it needs to send to everyone
+    \item[\-] \includegraphics[width=0.6\linewidth]{images/oneToAllBroadcast}
+  \end{itemize}
+  \item All-to-One Reduction
+  \begin{itemize}
+    \item the dual of one-to-all broadcast
+    \item each node has \(m\) units of data
+    \item these data items must be combined piece-wise (using some associative operator, such as \textbf{addition} or \textbf{min} for example)
+    \item the result made available at a target node
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{One-to-All Broadcast and All-to-One Reduction on Rings}
+\begin{itemize}
+  \item Naive Approach
+  \begin{itemize}
+    \item send \(p-1\) messages from the source to the other \(p-1\) nodes
+    \item is inefficient, because
+    \begin{itemize}
+      \item the source node becomes a bottleneck
+      \item the communication network is underutilized (only the connection between a single pair of nodes is used at a time)
+      \item requires \(p-1\) communication steps
+    \end{itemize}
+  \end{itemize}
+  \item Better Approach: Recursive Doubling
+  \begin{itemize}
+    \item source sends a message to a selected node: we now have two independent problems defined over halves of nodes
+  \end{itemize}
+  \item Reduction can be performed in an identical fashion by inverting the process
+\end{itemize}
+
+\textbf{One-to-All Broadcast on a Ring}\\
+\begin{center}
+  \includegraphics[width=0.6\linewidth]{images/oneToAllBroadcastRing}
+\end{center}
+\begin{itemize}
+  \item node 0 is the source of the broadcast
+  \item each message transfer step is shown by an arrow from the source of the message to its destination
+  \item the number on an arrow indicates the time step during which the message is transferred
+\end{itemize}
+
+\textbf{All-to-One Reduction on a Ring}\\
+\begin{center}
+  \includegraphics[width=0.6\linewidth]{images/allToOneReductionRing}
+\end{center}
+\begin{itemize}
+  \item reduction on a ring with node 0 as the destination of the reduction
+\end{itemize}
+
+\subsubsection{Broadcast and Reduction on a Mesh}
+\begin{itemize}
+  \item 2D-Mesh
+  \begin{itemize}
+    \item we can view each row and column of a square mesh of \(p\) nodes as a linear array of \(\sqrt(p)\) nodes
+    \item broadcast and reduction operations can be performed in two steps
+    \begin{itemize}
+      \item the first step does the operation along a row and
+      \item the second step along each column concurrently
+    \end{itemize}
+  \end{itemize}
+  \item Generalization to \(d\)-D Mesh
+  \begin{itemize}
+    \item this process generalizes to higher dimensions as well
+  \end{itemize}
+  \item Generalization to a Hypercube
+  \begin{itemize}
+    \item a hypercube with \(2^d\) nodes can be regarded as a \(d\)-D mesh with two nodes in each dimension
+    \item the mesh algorithm can be generalized to a hypercube and the operation is carried out in \(d (= log(p))\) steps
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.5\linewidth]{images/broadcastReductionMesh}
+\end{center}
+
+\subsubsection{Broadcast and Reduction Algorithms}
+\begin{itemize}
+  \item Adaptations of the same Algorithm
+  \begin{itemize}
+    \item all of the algorithms described before are adaptations of the same algorithmic template
+    \item we illustrate the algorithm (on next slide) for a hypercube
+    \begin{itemize}
+      \item the hypercube has \(2^d\) nodes and \(my_id\) is the label for a node
+      \item \(X\) is the message to be broadcast, which initially resides at the source node 0
+    \end{itemize}
+  \end{itemize}
+  \item Cost Analysis
+  \begin{itemize}
+    \item the broadcast or reduction procedure involves \(log(p)\) point-to-point simple message transfers, each at a time cost of \(t_s + m \cdot t_w\)
+    \item the total time is therefore given by \(T = (t_s + m \cdot t_w) \cdot log(p)\)
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.6\linewidth]{images/boradcastReductionAlgorithm}
+\end{center}
+
+\textbf{Broadcast Algorithm on a Hypercube}\\
+\begin{lstlisting}
+procedure GENERAL_ONE_TO_ALL_BC(d, my_id, source, X)
+begin
+  my_virtual_id := my_id XOR source;
+  mask := 2^d - 1;
+  for i := d - 1 downto 0 do    /* outer loop */
+    mask := mask XOR 2^i;   /* Set bit i of mask to 0 */
+    if (my_virtual_id AND mask) = 0 then
+      if (my_virtual_id AND 2^i) = 0 then
+        virtual_dest := my_virtual_id XOR 2^i;
+        send X to (virtual_dest XOR source);
+  /* Convert virtual_dest to the label of the physical destination */
+      else
+        virtual_source := my_virtual_id XOR 2^i;
+        receive X from (virtual_source XOR source);
+  /* Convert virtual_source to the label of the physical source */
+      endelse;
+  endfor;
+end GENERAL_ONE_TO_ALL_BC
+\end{lstlisting}
+
+\textbf{Reduction Algorithm on a Hypercube}\\
+\begin{lstlisting}
+procedure ALL_TO_ONE_REDUCE(d, my_id, m, X, sum)
+begin
+  for j := 0 to m - 1 do sum[j] := X[j];
+  mask := 0;
+  for i := 0 to d - 1 do
+    /* Select nodes whose lower i bits are 0 */
+    if (my_id AND mask) = 0 then
+      if (my_id AND 2^i) != 0 then
+        msg_destination := my_id XOR 2^i;
+        receive X from msg_source;
+        for j := 0 to m - 1 do
+          sum[j] := sum[j] + X[j];
+      endelse;
+    mask := mask XOR 2^i;   /* Set bit i of mask to 1 */
+  endfor;
+end ALL_TO_ONE_REDUCE
+\end{lstlisting}
+
+\subsubsection{All-to-All Broadcast and Reduction}
+\begin{itemize}
+  \item All-to-All Broadcast (All-Gather)
+  \begin{itemize}
+    \item generalization of broadcast in which each node is the source as well as the destination
+    \item a node sends the same \(m\)-word message to every other node, but different nodes may broadcast different messages
+    \item simplest approach
+    \begin{itemize}
+      \item perform \(p\) one-to-all broadcasts, one starting at each node
+    \end{itemize}
+    \begin{center}
+      \includegraphics[width=0.6\linewidth]{images/allToAllBroadcast}
+    \end{center}
+  \end{itemize}
+  \item All-to-All Reduction
+  \begin{itemize}
+    \item every node is the destination of an all-to-one reduction
+    \item each node starts with \(p\) messages
+  \end{itemize}
+\end{itemize}
+
+\textbf{All-to-All Broadcast and Reduction on a Ring}\\
+\begin{minipage}{0.6\linewidth}
+\begin{itemize}
+  \item Efficient Approach
+  \begin{itemize}
+    \item each node first sends to one of its neighbors the data it needs to broadcast
+    \item in subsequent steps, it forwards the data received from one of its neighbors to its other neighbor
+    \item the algorithm terminates in \(p - 1\) steps
+  \end{itemize}
+  \item Reduction can be performed in an identical fashion by inverting the process
+  \begin{itemize}
+    \item on receiving a message, a node must combine it with the local copy of the message that has the same destination as the received message before forwarding the combined message to the next neighbor
+  \end{itemize}
+\end{itemize}
+\end{minipage}%
+\begin{minipage}{0.4\linewidth}
+\begin{center}
+  \includegraphics[width=0.9\linewidth]{images/allToAllBroadcastReductionRing}
+\end{center}
+\end{minipage}
+
+\textbf{All-to-All Broadcast on a Ring}\\
+\begin{lstlisting}
+procedure ALL_TO_ALL_BC_RING(my_id, my_msg, p, result)
+begin
+  left := (my_id - 1) mod p;
+  right := (my_id + 1) mode p;
+  result := my_msg;
+  msg := result;
+  for i := 1 to p - 1 do
+    send msg to right;
+    receive msg from left;
+    result := result u msg; /* u: union */
+  endfor;
+end ALL_TO_ALL_BC_RING
+\end{lstlisting}
+Note (line 8 and 9): cyclic dependency use sendrecv in MPI
+
+\textbf{All-to-All Broadcast on a Mesh}\\
+\begin{itemize}
+  \item First Phase
+  \begin{itemize}
+    \item each row of the mesh performs an all-to-all broadcast using the procedure for the linear array
+    \item in this phase, all nodes collect \(\sqrt(p)\) messages corresponding to the \(\sqrt(p)\) nodes of their respective rows
+    \item each node consolidates this information into a single message of size \(m\sqrt(p)\)
+  \end{itemize}
+  \item Second Phase
+  \begin{itemize}
+    \item column-wise all-to-all broadcast of the consolidated messages
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.6\linewidth]{images/allToAllBroadcastMesh}
+\end{center}
+
+\textbf{All-to-All Broadcast on a square Mesh}\\
+\begin{lstlisting}
+procedure ALL_TO_ALL_BC_MESH(my_id, my_msg, p, result)
+begin
+/* Communication along rows */
+  left := my_id - (my_id mod sqrt(p)) + (my_id - 1) mod sqrt(p);
+  right := my_id - (my_id mode sqrt(p)) + (my_id + 1) mod sqrt(p);
+  result := my_msg;
+  msg := result;
+  for i := 1 to sqrt(p) - 1 do
+    send msg to right;
+    receive msg from left;
+    result := result u msg; /* u: union */
+  endfor;
+/* Communication along columns */
+  up := (my_id - sqrt(p)) mod p;
+  down := (my_id + sqrt(p)) mod p;
+  msg := result;
+  for i := 1 to sqrt(p) - 1 do
+    send msg to down;
+    receive msg from up;
+    result := result u msg; /* u: union */
+  endfor;
+end ALL_TO_ALL_BC_MESH
+\end{lstlisting}
+
+\textbf{All-to-All Broadcast on a Hypercube}\\
+\begin{itemize}
+  \item Generalization of the mesh algorithm to \(log(p)\) dimensions
+  \begin{itemize}
+    \item message size doubles at each of the \(log(p)\) steps
+  \end{itemize}
+\end{itemize}
+\begin{minipage}{0.5\linewidth}
+\begin{lstlisting}
+procedure ALL_TO_ALL_BC_HCUBE(my_id, my_msg, d, result)
+begin
+  result := my_msg;
+  for i := 0 to d - 1 do
+    partner := my_id XOR 2^i;
+    send result to partner;
+    receive msg from partner;
+    result := result u msg; /* u: union */
+  endfor;
+end ALL_TO_ALL_BC_HCUBE
+\end{lstlisting}
+\end{minipage}%
+\begin{minipage}{0.5\linewidth}
+  \begin{center}
+    \includegraphics[width=0.9\linewidth]{images/allToAllBroadcastHypercube}
+  \end{center}
+\end{minipage}
+
+\subsubsection{All-to-All Broadcast and Reduction}
+\begin{itemize}
+  \item Cost Analysis
+  \begin{itemize}
+    \item lower bound in message size
+    \[
+      T = \Omega(m t_w (p - 1))
+    \]
+    \item ring
+    \[
+      T = (p - 1)(t_s + m t_w)
+    \]
+    \item mesh
+    \begin{itemize}
+      \item first phase: \((\sqrt(p) - 1)(t_s + m t_w)\)
+      \item second phase: \((\sqrt(p) - 1)(t_s + m t_w \sqrt(p))\)
+      \item total: \(T = 2 t_s (\sqrt(p) - 1) + m t_w (p - w)\)
+    \end{itemize}
+    \item hypercube
+    \[
+      T = \sum_{i = 1}^{log(p)} (t_s + 2^{i - 1} m t_w) = t_s log(p) + m t_w (p - 1)
+    \]
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{All-Reduce}
+\begin{itemize}
+  \item All-Reduce
+  \begin{itemize}
+    \item each node starts with a buffer of size \(m\) and the final results of the operation are identical buffers of size \(m\) on each node that are formed by combining the original \(p\) buffers using an associative operator
+    \item inefficient approach
+    \begin{itemize}
+      \item identical to all-to-one reduction followed by a one-to-all broadcast
+    \end{itemize}
+    \item better approach on a hypercube
+    \begin{itemize}
+      \item uses the pattern of all-to-all broadcast, but without doubling message size
+      \item hypercube: \(T = (t_s + m \cdot t_w) log(p)\)
+    \end{itemize}
+  \end{itemize}
+  \item All-Reduce \(\neq\) All-to-All Reduction
+  \begin{itemize}
+    \item different from all-to-all reduction, in which \(p\) simultaneous all-to-one reductions take place, each with a different destination for the result
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{The Prefix-Sum Operation}
+\begin{itemize}
+  \item Problem
+  \begin{itemize}
+    \item given \(p\) numbers \(n_0, n_1, \ldots, n_{p-1}\) (one on each node)
+    \item the problem is to compute the sums \(s_k = \sum^{k}_{i = 0} n_i, \forall k \in [0, p-1]\)
+    \item at the end of the procedure, node \(k\) holds \(s_k\)
+  \end{itemize}
+  \item Implementation
+  \begin{itemize}
+    \item the operation can be implemented using the all-to-all broadcast kernel
+    \item we must account for the fact that in prefix sums the node with label \(k\) uses information from only the \(k\)-node subset whose labels are less than or equal to \(k\)
+    \item using an additional result buffer
+    \begin{itemize}
+      \item the content of an incoming message is added to the result buffer only if the message comes from a node with a smaller label than the recipient node
+    \end{itemize}
+    \item the contents of the outgoing message are updated with every incoming message
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.5\linewidth]{images/prefixSumOperation}
+\end{center}
+\begin{lstlisting}
+procedure PREFIX_SUMS_HCUBE(my_id, my_number, d, result)
+begin
+  result := my_number;
+  msg := result;
+  for i := 0 to d - 1 do
+  begin
+    partner := my_id XOR 2^i;
+    send msg to partner;
+    receive number from partner;
+    msg := msg + number;
+    if (partner < my_id) then result := result + number;
+  endfor;
+end PREFIX_SUMS_HCUBE
+\end{lstlisting}
+
+\subsection{Personalized Communication}
+\begin{itemize}
+  \item Scatter
+  \begin{itemize}
+    \item a single node sends a unique message of size \(m\) to every other node (also called a \textbf{one-to-all personalized communication})
+    \item is fundamentally different from broadcast
+    \item but the algorithmic structure is similar
+  \end{itemize}
+    \includegraphics[width=0.5\linewidth]{images/scatter}
+  \item Gather
+  \begin{itemize}
+    \item a single node collects a unique message from each node
+    \item the gather operation is exactly the inverse of the scatter operation and can be executed as such
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Example of the Scatter Operation}
+\begin{center}
+  \includegraphics[width=0.5\linewidth]{images/scatterExample}
+\end{center}
+
+\subsubsection{Cost of Scatter and Gather}
+\begin{itemize}
+  \item Analysis
+  \begin{itemize}
+    \item there are \(log(p)\) steps
+    \item in each step, the number of involved nodes doubles and the data size halves
+    \item \(T = t_s \cdot log(p) + m \cdot t_w (p - 1)\)
+  \end{itemize}
+  \item Generalization
+  \begin{itemize}
+    \item this time holds for a linear array as well as a 2-D mesh
+    \item \(T = \Omega(m \cdot t_w (p - 1))\) is a lower bound for scatter and gather
+    \item \(T\) is asymptotically optimal in message size \(m\)
+  \end{itemize}
+\end{itemize}
+
+\subsubsection{Total Exchange}
+\begin{itemize}
+  \item All-to-All Personalized Communication (Total Exchange)
+  \begin{itemize}
+    \item each node has a distinct message of size \(m\) for every other node
+    \item this is unlike all-to-all broadcast, in which each node sends the same message to all other nodes
+  \end{itemize}
+  \includegraphics[width=0.5\linewidth]{images/totalExchange}
+  \item Example: Transposing a Matrix
+  \begin{itemize}
+    \item each node contains one full row of the matrix
+    \item the transpose operation in this case is identical to an all-to-all personalized communication operation
+  \end{itemize}
+  \includegraphics[width=0.3\linewidth]{images/transposeMatrix}
+\end{itemize}
+
+\subsubsection{All-to-All Personalized Communication on a Ring}
+\begin{itemize}
+  \item Optimal Approach
+  \begin{itemize}
+    \item each node sends all pieces of data as one consolidated message of size \(m (p - 1)\) to one of its neighbors
+    \item each node extracts the information meant for it from the data received, and forwards the remaining pieces of size \(m\) each to the next node
+    \item the size of the consolidated message reduces by \(m\) at each step
+  \end{itemize}
+  \item Analysis
+  \begin{itemize}
+    \item the algorithm terminates in \(p - 1\) steps
+    \item in step \(i\), the message size is \(m (p - i)\)
+    \begin{align*}
+      T &= \sum^{p-1}_{i=1} (t_s + t_w \cdot m (p - i))\\
+        &= t_s (p - 1) + \sum^{p-1}_{i=1} i \cdot t_w \cdot m\\
+        &= (t_s + t_w \cdot m \cdot p / 2)(p - 1)\\
+    \end{align*}
+    \item the \(t_w\) term in this equation can be reduced by a factor of \(2\) by communicating messages in both directions
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.6\linewidth]{images/allToAllPersonalizedCommunicationRing}
+\end{center}
+
+\subsubsection{All-to-All Personalized Communication on a Mesh}
+\begin{itemize}
+  \item Optimal Approach
+  \begin{itemize}
+    \item each node first groups its \(p\) messages according to the columns of their destination nodes
+    \item All-to-All personalized communication is performed independently in each row with clustered messages of size \(m \sqrt(p)\)
+    \item messages in each node are sorted again, this time according to the rows of their destination nodes
+    \item All-to-All personalized communication is performed independently in each column with clustered messages of size \(m \sqrt(p)\)
+  \end{itemize}
+  \item Analysis
+  \begin{itemize}
+    \item time for the first phase is identical to that in a ring with \(\sqrt(p)\) nodes: \((t_s + \frac{m \cdot p}{2} \cdot t_w)(\sqrt(p) - 1)\)
+    \item time in the second phase is identical to the first phase
+    \item total time \(T = (2 t_s + m \cdot p \cdot t_w)(\sqrt(p) - 1)\)
+    \item it can be shown that the time for rearrangement is much less than this communication time
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.6\linewidth]{images/allToAllPersonalizedCommunicationMesh}
+\end{center}
+
+\subsubsection{All-to-All Personalized Communication on a Hypercube}
+\begin{itemize}
+  \item Approach
+  \begin{itemize}
+    \item generalize the mesh algorithm to \(log(p)\) steps
+    \item at any stage in All-to-All personalized communication, every node holds \(p\) packets of size \(m\) each
+    \item while communicating in a particular dimension, every node sends \(p/2\) of these packets (consolidated as one message)
+    \item a node must rearrange its messages locally before each of the \(log(p)\) communication steps
+  \end{itemize}
+  \item Analysis
+  \begin{itemize}
+    \item we have \(log(p)\) iterations and \(m \cdot p / 2\) words are communicated in each iteration
+    \item the total cost is \(T = (t_s + t_w \cdot m \cdot p / 2) log(p)\)
+    \item this is not optimal
+  \end{itemize}
+\end{itemize}
+\begin{figure*}
+  \begin{center}
+    \includegraphics{images/allToAllPersonalizedCommunicationHypercubeNonoptimal}
+  \end{center}
+  \caption{\textbf{Non-optimal} All-to-All Personalized Communication on a Hypercube}
+\end{figure*}
+\begin{itemize}
+  \item Optimal Algorithm
+  \begin{itemize}
+    \item each node simply performs \(p - 1\) communication steps, exchanging \(m\) words of data with a different node in every step
+    \item a node must choose its communication partner in each step so that the hypercube links do not suffer congestion
+    \item in the \(j^{\text{th}}\) communication step, node \(i\) exchanges data with node \((i XOR j)\)
+    \item in this schedule, all paths in every communication step are congestion-free, and none of the bidirectional links carry more than one message in the same direction
+  \end{itemize}
+  \item Analysis
+  \begin{itemize}
+    \item there are \(p - 1\) steps and each step involves non-congesting message transfer of \(m\) words
+    \item the total cost is \(T = (t_s + t_w \cdot m)(p - 1)\)
+    \item this is asymptotically optimal in message size
+  \end{itemize}
+\end{itemize}
+\begin{figure*}
+  \begin{center}
+    \includegraphics{images/allToAllPersonalizedCommunicationHypercubeOptimal}
+  \end{center}
+  \caption{\textbf{Optimal} All-to-All Personalized Communication on a Hypercube}
+\end{figure*}
+\begin{lstlisting}
+procedure ALL_TO_ALL_PERSONAL(d, my_id)
+begin
+  for i := 1 to 2^d - 1 do
+  begin
+    partner := my_id XOR i;
+    send M_{my_id, partner} to partner;
+    receive M_{partner, my_id} from partner;
+  endfor;
+end ALL_TO_ALL_PERSONAL
+\end{lstlisting}
+
+\subsubsection{Summary of Communication Times}
+\begin{tabularx}{\linewidth}{llX}
+  \hline
+  Operation & Hypercube Time & B/W Requirement\\
+  \hline
+  One-to-all broadcast, All-to-one reduction & \(min((t_s + t_w \cdot m) log(p), \colorbox{yellow}{\(2(t_s \cdot log(p) + t_w \cdot m)\)})\) & \(\Theta(1)\)\\
+  All-to-all broadcast, All-to-all reduction & \(t_s \cdot log(p) + t_w \cdot m (p - 1)\) & \(\Theta(1)\)\\
+  All-reduce & \(min((t_s + t_w \cdot m) \cdot log(p), \colorbox{yellow}{2(\(t_s \cdot log(p) + t_w \cdot m)\)})\) & \(\Theta(1)\)\\
+  Scatter, Gather & \(t_s \cdot log(p) + t_w \cdot m (p - 1)\) & \(\Theta(1)\)\\
+  All-to-all personalized & \((t_s + t_w \cdot m)(p - 1)\) & \(\Theta(p)\)\\
+  Circular shift & \(t_s + t_w \cdot m\) & \(\Theta(p)\)\\
+  \hline
+\end{tabularx}
+\colorbox{yellow}{is valid only if the message size \(m\) is large enough to be split into \(p\) roughly equal parts}\\
+''All-to-all personalized'' and ''Circular shift'' operations need at least a hypercube topology
+
+\begin{itemize}
+  \item \(t_s\): startup time, \(t_w\): per-word transfer time
+  \item \(p\): number of processes
+  \item \(m\): message size in words
+  \item B/W requirement: necessary cross-section bandwidth to perform an operation in the given time
+\end{itemize}
