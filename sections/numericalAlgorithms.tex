@@ -1,0 +1,288 @@
+%!TEX root = ../ProgAlg.tex
+\section{Numerical Algorithms}
+
+\subsection{Dense Matrix-Vector Multiplication}
+\begin{itemize}
+  \item Problem
+  \begin{itemize}
+    \item let \(A\) be a \(n\) x \(n\) matrix and \(x\) and \(y\) are \(n\) x \(1\) vectors
+    \item compute \(y = Ax\)
+  \end{itemize}
+  \item Row-wise 1D Partitioning: 1 row of matrix A per process
+  \begin{itemize}
+    \item initial partitioning; process \(p_i\) owns row \(A_i\) and element \(x_i\)
+    \item algorithm
+    \begin{enumerate}
+      \item all-to-all broadcast to distribute \(x\) to all processes
+      \item \(p_i\) computes \(y_i = A_i x\)
+    \end{enumerate}
+    \item parallel runtime: \(T_p = \Theta(n) + \Theta(n) = \Theta(n)\)
+    \item cost: \(p \cdot T_p = n \cdot \Theta(n) = \Theta(n^2)\), is cost-optimal
+  \end{itemize}
+  \item Row-wise 1D Partitioning: using fewer than \(n\) processes
+  \begin{itemize}
+    \item each process owns \(n/p\) rows of \(A\) and the corresponding elements of \(x\)
+    \item same algorithm
+    \item parallel runtime: \(T_p = t_s \cdot log(p) + t_w \cdot n/p (p - 1) + n^2 / p = \Theta(log(p) + n + n^2 / p)\)
+    \item cost: \(p \cdot T_p = \Theta(p \cdot log(p) + n p + n^2)\), is \textbf{cost-optimal for \(p = \mathcal{O}(n)\)}
+  \end{itemize}
+  \item Scalability Analysis
+  \begin{itemize}
+    \item problem size \(W = \Theta(n^2)\)
+    \item overhead \(T_O = p \dot T_p - W = p \cdot log(p) + n p + n^2 - W = p \cdot log(p) + n \cdot p\)
+    \item isoefficiency: \(W = K \cdot T_O = K (p \cdot log(p) + n \cdot p)\)
+    \begin{itemize}
+      \item first term: \(W = K \cdot p \cdot log(p) \rightarrow f(p) = p \cdot log(p)\)
+      \item second term: \(W = K \cdot n \cdot p = K \cdot p \cdot \sqrt{W} \rightarrow f(p) = p^2\)
+    \end{itemize}
+    \item degree of concurrency: \(C(W) = \mathcal{O}(\sqrt{W}) = \mathcal{O}(n)\)
+    \begin{itemize}
+      \item \(p = \mathcal{O}(n) \rightarrow n = \Omega(p) \rightarrow W = \Omega(p^2)\)
+    \end{itemize}
+    \item overall asymptotic isoefficiency function is determined by the maximum of the previous function: \(f(p) = \Theta(p^2)\)
+  \end{itemize}
+  \item 2D Partitioning: 1 matrix element per process
+  \begin{itemize}
+    \item initial partitioning: process \(p_i\) owns element \(A_{i,j}\)
+    \item the \(n\) processes of the last column also own \(x_i\)
+    \item algorithm:
+    \begin{enumerate}
+      \item align vector \(x\) along the diagonal
+      \item distribute \(x_i\) along columns
+      \item \(n^2\) parallel multiplications
+      \item all-to-one reduction along rows (operation: \(+\))
+    \end{enumerate}
+    \begin{figure}
+      \centering
+      \subfigure[]{\includegraphics[width=0.24\linewidth]{images/2dPartitionongA}}
+      \subfigure[]{\includegraphics[width=0.24\linewidth]{images/2dPartitionongB}}
+      \subfigure[]{\includegraphics[width=0.24\linewidth]{images/2dPartitionongC}}
+      \subfigure[]{\includegraphics[width=0.24\linewidth]{images/2dPartitionongD}}
+    \end{figure}
+  \end{itemize}
+  \item 2D partitioning: using fewer than \(n^2\) processes
+  \begin{itemize}
+    \item Algorithm
+    \begin{itemize}
+      \item same algorithm as before but with coarse granularity: message length \(m = n / \sqrt{p}\)
+    \end{itemize}
+    \item parallel runtime
+    \begin{itemize}
+      \item \(T_p = \frac{n^2}{p} + (t_s + t_w \frac{n}{\sqrt{p}}) + 2 (t_s + t_w \frac{n}{\sqrt{p}}) log(\sqrt{p}) \approx \frac{n^2}{p} + t_w \frac{n}{\sqrt{p}} log(p)\)
+    \end{itemize}
+    \item scalability analysis
+    \begin{itemize}
+      \item[\-]
+      \[
+        T_O = p \cdot T_p - W = t_s \cdot p \cdot log(p) + t_w \cdot n \cdot \sqrt{p} \cdot log(p)
+      \]
+      \item the overall isoefficiency \(f(p)\) is \(\mathcal{O}(p log^2(p))\) (due to the network bandwidth)
+      \item asymptotic upper bound on the number of processes that can be used cost-optimally: \(p = \mathcal{O}(f^{-1}(W)) \approx \mathcal{O}(n^2 / log^2(n))\)
+    \end{itemize}
+  \end{itemize}
+  \item Comparison of 1D and 2D Partitionings
+  \begin{itemize}
+    \item 2D is faster than 1D for the same \(p \leq n\)
+    \item 2D has a better (smaller) asymptotic isoefficiency than 1D and therefore, 2D is more scalable (it can deliver the same efficiency on more processes)
+  \end{itemize}
+\end{itemize}
+
+\subsection{Dense Matrix-Matrix Multiplication}
+\begin{itemize}
+  \item Problem
+  \begin{itemize}
+    \item let \(A\) and \(B\) be \(n\) x \(n\) matrices
+    \item compute \(C = A \cdot B\)
+  \end{itemize}
+  \item Matrix Multiplication and Block Matrix Multiplication
+  \begin{itemize}
+    \item \(q\) determines granularity of block matrix multiplication (\(1 < q \leq n\))
+  \end{itemize}
+\end{itemize}
+\begin{minipage}{0.5\linewidth}
+\begin{lstlisting}
+procedure MAT_MULT(A, B, C)
+begin
+  for i := 0 to n - 1 do
+    for j := 0 to n - 1 do
+    begin
+      C[i, j] := 0;
+      for k := 0 to n - 1 do
+        C[i, j] := C[i, j] + A[i, j] x B[i, j];
+    endfor;
+end MAT_MULT
+\end{lstlisting}
+\end{minipage}%
+\begin{minipage}{0.5\linewidth}
+\begin{lstlisting}
+procedure BLOCK_MAT_MULT(A, B, C)
+begin
+  for i := 0 to q - 1 do
+    for j := 0 to q - 1 do
+    begin
+      Initialize all elements of C_{i, j} to zero;
+      for k := 0 to q - 1 do
+        C_{i, j} := C_{i, j} + A_{i, k} x B_{k, j};
+    endfor;
+end BLOCK_MAT_MULT(A, B, C)
+\end{lstlisting}
+\end{minipage}
+\begin{itemize}
+  \item A Simple Parallel Algorithm
+  \begin{itemize}
+    \item block matrix multiplication with \(p = q^2\) processes
+    \item all-to-all broadcast of matrix \(A\)'s blocks in each row
+    \item all-to-all broadcast of matrix \(B\)'s blocks in each column
+    \item computing block \(C_{i, j}\) requires all blocks \(A_{i, k}\) and \(B_{k, j}\) for \(0 \leq k < q\)
+  \end{itemize}
+  \item Parallel Runtime
+  \begin{itemize}
+    \begin{minipage}{0.5\linewidth}
+    \item 2 broadcasts: \(2 (t_s \cdot log(q) + \frac{t_w \cdot n^2}{q^2}(q - 1))\)
+    \item \(q\) block multiplications: \(q(\frac{n}{q})^3 = \frac{n^3}{q^2}\)
+    \end{minipage}%
+    \begin{minipage}{0.5\linewidth}
+      \(T_p = \frac{n^3}{q^2} + 2 (t_s \cdot log(q) + \frac{t_w \cdot n^2}{q^2}(q - 1))\\ \approx \frac{n^3}{p} + t_s \cdot log(p) + 2 \cdot t_w \frac{n^2}{\sqrt{p}}\)
+    \end{minipage}
+  \end{itemize}
+  \item Scalability Analysis
+  \begin{itemize}
+    \item assumption: \(W = n^3 \rightarrow\) cost-optimal for \(p = \mathcal{O}(n^2)\)
+    \item isoefficiency due to communication overhead: \(\Theta(p^{3/2})\)
+    \item degree of concurrency \(C(W) = \mathcal{O}(W^{2/3}) = \mathcal{O}(n^2) = p \rightarrow W = \Omega(p^{3/2})\)
+  \end{itemize}
+\end{itemize}
+
+\subsection{Cannon's Matrix Multiplication}
+\begin{itemize}
+  \item Cannon's Algorithm
+  \begin{itemize}
+    \item like the simple parallel matrix multiplication algorithm, but memory optimal
+    \begin{itemize}
+      \item simple algorithm: memory usage per process \(= M(n, q) = (2q + 1)(\frac{n}{1})^2 = \mathcal{O}(\frac{n^2}{q})\)
+      \item Cannon's Algorithm: memory usage per process \(= M(n, q) = 3(\frac{n}{q})^2 = \mathcal{O}(\frac{n^2}{q^2})\)
+    \end{itemize}
+    \item due to the sequential computation of the \(q\) block multiplications in each process, only two blocks are needed in each sequential step per process
+    \item synchronization among the processes: each process computes one block multiplication and circularly shifts \(A_{i,k}\) in its row and \(B_{k,j}\) in its column and gets in each step a fresh pair of blocks
+  \end{itemize}
+  \item Parallel Runtime
+  \begin{itemize}
+    \item \(T_p = \frac{n^3}{p} + 2 \sqrt{p} t_s + \frac{2 t_w n^2}{\sqrt{p}}\)
+  \end{itemize}
+  \item Scalability Analysis
+  \begin{itemize}
+    \item the overall isoefficiency is \(\mathcal{O}(p^{3/2})\) due to bandwidth term \(t_w\) and concurrency
+  \end{itemize}
+\end{itemize}
+\begin{center}
+  \includegraphics[width=0.6\linewidth]{images/cannonsMatrixMultiplication}
+\end{center}
+
+\subsection{DNS MAtrix Multiplication}
+\begin{itemize}
+  \item The DNS Algorithm (with intermediate data partitioning)
+  \begin{itemize}
+    \item name: Dekel, Nassimi, Sahni
+    \item basic idea
+    \begin{itemize}
+      \item \(n^3\) processes, each of them computes one scalar multiplication
+      \item vectors of \(n\) multiplication results are reduced: added in \(log(n)\) steps
+    \end{itemize}
+    \item practical implementation
+    \begin{enumerate}
+      \item moving the columns of \(A\) and the rows of \(B\) to their respecive planes
+      \item performing one-to-all broadcast along the \(j\) axis for \(A\) and along the \(i\) axis for \(B\)
+      \item \(n^3\) parallel scalar multiplications
+      \item all-to-one reudction along the \(k\) axis
+    \end{enumerate}
+    \item parallel runtime
+    \begin{itemize}
+      \item communication steps \(2\) and \(4\) are performed within a group of \(n\) processes \(\rightarrow \Theta(log(n))\)
+      \item \(T_p = \mathcal{O}(1) + \Theta(log(n)) = \Theta(log(n))\)
+    \end{itemize}
+    \item cost
+    \begin{itemize}
+      \item \(\Theta(n^3 \cdot log(n))\), is not cost-optimal
+    \end{itemize}
+  \end{itemize}
+\end{itemize}
+\begin{figure}
+  \centering
+  \subfigure[]{\includegraphics[width=0.5\linewidth]{images/DNSMatrixMultiplication}}
+  \subfigure[]{\includegraphics[width=0.49\linewidth]{images/DNSMatrixMultiplication2}}
+\end{figure}
+\begin{itemize}
+  \item The DNS Algorithm: using fewer than \(n^3\) processes
+  \begin{itemize}
+    \item assume \(p = q^3\) for some \(q < n\)
+    \item block partitioning of \(A\) and \(B\) with block size \(n/q\) x \(n/q\)
+    \item intermediate data partitioning with block size \((n/q)^3\)
+  \end{itemize}
+  \item Parallel Runtime
+  \[
+    T_p = \frac{n^3}{p} + t_s \cdot log(p) + t_w \frac{n^2}{p^{2/3}} log(p)
+  \]
+  \item Scalability Analysis
+  \begin{itemize}
+    \item the isoefficiency function is \(\Theta(p log^3(p))\)
+    \item cost-optimal for \(p = \mathcal{O}(n^3 / log^3(n))\)
+  \end{itemize}
+\end{itemize}
+
+\subsection{Parallel Gaussian Elimination}
+\begin{minipage}{0.5\linewidth}
+\begin{itemize}
+  \item Simple Parallel implementation with 1-D Row-Partitioning
+  \[
+    T_p = \frac{3}{2} n (n - 1) + t_s n log(n) + \frac{1}{2} t_w n (n - 1) log(n)
+  \]
+\end{itemize}
+\begin{lstlisting}
+procedure GAUSSIAN_ELIMINATION(A, b, y)
+begin
+  for k := 0 to n - 1 do  /* Outer loop */
+  begin
+    for j := k + 1 to n - 1 do
+      A[k, j] := A[k, j]/A[k, k]; /* Division step */
+    y[k] := b[k]/A[k, k];
+    A[k, k] := 1;
+    for i := k + 1 to n - 1 do
+    begin
+      for j := k + 1 to n - 1 do
+        A[i, j] := A[i, j] - A[i, k] x A[k, j];
+      b[i] := b[i] - A[i, k] x y[k];
+      A[i, k] := 0;
+    endfor; /* Line 9 */
+  endfor; /* Line 3 */
+end GAUSSIAN_ELIMINATION
+\end{lstlisting}
+\end{minipage}%
+\begin{minipage}{0.5\linewidth}
+  \begin{center}
+    \includegraphics[width=0.8\linewidth]{images/parallelGaussianElimination}
+  \end{center}
+\end{minipage}
+\begin{itemize}
+  \item 1D Partitioning with Asynchronous (or Pipelined) Execution: \(p = n\)
+  \begin{itemize}
+    \item the total number of steps in the entire pipelined procedure is \(\Theta(n)\)
+    \item in any step
+    \begin{itemize}
+      \item either \(\mathcal{O}(n)\) elements are communicated between directly-connected processes,
+      \item or a division step is performed on \(\mathcal{O}(n)\) elements of a row,
+      \item or an elimination step is performed on \(\mathcal{O}(n)\) elements of a row
+    \end{itemize}
+    \item the parallel runtime is therefore \(\mathcal{O}(n^2)\) (this is cost-optimal)
+  \end{itemize}
+  \item 2D Partitioning with Pipelining and \(p = n^2\)
+  \begin{itemize}
+    \item more scalable than 1D partitioning
+    \item parallel runtime: \(\mathcal{O}(n)\) (this is cost-optimal)
+  \end{itemize}
+  \item 2D Partitioning with Pipelining and \(p < n^2\)
+  \begin{itemize}
+    \item a processor containing a completely active part of the matrix performs \(n^2/p\) multiplications and subtractions, and communicates \(n/\sqrt{p}\) words along its row and its column
+    \item the computation dominates communication for \(n >> p\)
+    \item the total parallel runtime of this algorithm is \(\mathcal{O}(n^3/p)\) (this is cost-optimal)
+  \end{itemize}
+\end{itemize}
